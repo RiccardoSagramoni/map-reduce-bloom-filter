@@ -14,12 +14,12 @@ import java.io.IOException;
  * <li>Output value: bloom filter structure (ArrayWritable&lt;ByteWritable&gt;)</li>
  * </ul>
  */
-public class BloomFilterReducer extends Reducer<Text, IntArrayWritable, Text, ArrayWritable>  {
+public class BloomFilterReducer extends Reducer<Text, IntArrayWritable, Text, BooleanArrayWritable>  {
 
 	// Size of the bloom filter (taken from mapreduce configuration)
 	private int BLOOM_FILTER_SIZE;
 	// Writable array for the result of the reducer (i.e. the bloom filter)
-	private static final ArrayWritable SERIALIZABLE_BLOOM_FILTER = new ArrayWritable(ByteWritable.class);
+	private static final BooleanArrayWritable SERIALIZABLE_BLOOM_FILTER = new BooleanArrayWritable();
 	// Value to set the corresponding item of the bloom filter in the case of a hit
 	private static final byte HIT_VALUE = 1;
 
