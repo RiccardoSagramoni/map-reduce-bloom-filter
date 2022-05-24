@@ -5,6 +5,15 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
 
+/**
+ * Reducer of the mapreduce application that builds a bloom filter.
+ * <ul>
+ * <li>Input key: average rating (Text)</li>
+ * <li>Input value: array of position to set to 1 in the bloom filter (IntArrayWritable)</li>
+ * <li>Output key: average rating (Text)</li>
+ * <li>Output value: bloom filter structure (ArrayWritable&lt;ByteWritable&gt;)</li>
+ * </ul>
+ */
 public class BloomFilterReducer extends Reducer<Text, IntArrayWritable, Text, ArrayWritable>  {
 
 	// Size of the bloom filter (taken from mapreduce configuration)
@@ -16,6 +25,7 @@ public class BloomFilterReducer extends Reducer<Text, IntArrayWritable, Text, Ar
 
 	@Override
 	public void setup (Context context) {
+		// Retrieve configuration
 		BLOOM_FILTER_SIZE = context.getConfiguration().getInt("bloom.filter.size", 0);
 	}
 
