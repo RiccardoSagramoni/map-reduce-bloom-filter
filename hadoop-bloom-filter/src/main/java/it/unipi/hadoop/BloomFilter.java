@@ -9,22 +9,34 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
 public class BloomFilter {
-	public static void main (String[] args) throws Exception {
-		Configuration conf = new Configuration();
-		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-		if (otherArgs.length < 2)	// ??
-			System.err.println("Usage: BloomFilter [input] [output]"); System.exit(2);
 
-		// Job configuration
+	private static int computeK(double p) {
+		// TODO
+		return 0;
+	}
+
+	private static int computeM(double p, int n) {
+		// TODO
+		return 0;
+	}
+
+	private static int runBloomFilterBuilder(Configuration conf)
+			throws IOException, ClassNotFoundException, InterruptedException {
+		// TODO
+
 		Job job = Job.getInstance(conf, "BloomFilter");
-		job.getConfiguration().set("bloom.filter.false", "value p");	// from cmd line
-		job.getConfiguration().set("bloom.filter.keys", "value n");		// to estimate
+		double p;	// da terminale
+		double n; 	// stimato
+		// job.getConfiguration().set("bloom.filter.false", "value p");	// from cmd line
+		// job.getConfiguration().set("bloom.filter.keys", "value n");		// to estimate (from line count mapreduce?)
 		// compute m and k from expression in the guideline
 		job.getConfiguration().set("bloom.filter.size", "value m");	// to set correctly
 		job.getConfiguration().set("bloom.filter.hash", "value k");
@@ -41,11 +53,77 @@ public class BloomFilter {
 		job.setNumReduceTasks(1);		// to set correctly
 
 		// Destination File -> to configure
+		// TODO
 		FileInputFormat.addInputPath(job, new Path("INPUT"));
 		FileOutputFormat.setOutputPath(job, new Path("OUTPUT"));
-		job.setInputFormatClass(TextInputFormat.class);
-		job.setOutputFormatClass(TextOutputFormat.class);
+		job.setInputFormatClass(NLineInputFormat.class);
+		job.setOutputFormatClass(SequenceFileOutputFormat.class);
+
+		return job.waitForCompletion(true) ? 0 : 1;
+	}
+
+	private static int runMapReduceLineCountBuilder(Configuration conf)
+			throws IOException, ClassNotFoundException, InterruptedException {
+		// TODO
+		// configurazione mapreduce
+		// Job configuration
+		Job job = Job.getInstance(conf, "BloomFilter");
+		double p;	// da terminale
+		double n; 	// stimato
+		// job.getConfiguration().set("bloom.filter.false", "value p");	// from cmd line
+		// job.getConfiguration().set("bloom.filter.keys", "value n");		// to estimate (from line count mapreduce?)
+		// compute m and k from expression in the guideline
+		//job.getConfiguration().set("bloom.filter.size", "value m");	// to set correctly
+		//job.getConfiguration().set("bloom.filter.hash", "value k");
+
+		job.setJarByClass(BloomFilter.class);
+		job.setMapperClass(BloomFilterMapper.class);	// LineCounterMapper
+		job.setMapOutputKeyClass(Text.class);
+		job.setMapOutputValueClass(IntArrayWritable.class);
+		//iteration.setCombinerClass(BloomFilterCombiner.class);
+		job.setReducerClass(BloomFilterReducer.class);			// LineCounterReducer
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(IntArrayWritable.class);
+
+		return job.waitForCompletion(true) ? 0 : 1;
+	}
+
+	public static void main (String[] args) throws Exception {
+		Configuration conf = new Configuration();
+		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		if (otherArgs.length < 2)	// ??
+			System.err.println("Usage: BloomFilter [input] [output]"); System.exit(2);
+
+		/*
+		// Job configuration
+		Job job = Job.getInstance(conf, "BloomFilter");
+		double p;	// da terminale
+		double n; 	// stimato
+		// job.getConfiguration().set("bloom.filter.false", "value p");	// from cmd line
+		// job.getConfiguration().set("bloom.filter.keys", "value n");		// to estimate (from line count mapreduce?)
+		// compute m and k from expression in the guideline
+		job.getConfiguration().set("bloom.filter.size", "value m");	// to set correctly
+		job.getConfiguration().set("bloom.filter.hash", "value k");
+
+		job.setJarByClass(BloomFilter.class);
+		job.setMapperClass(BloomFilterMapper.class);
+		job.setMapOutputKeyClass(Text.class);
+		job.setMapOutputValueClass(IntArrayWritable.class);
+		//iteration.setCombinerClass(BloomFilterCombiner.class);
+		job.setReducerClass(BloomFilterReducer.class);
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(IntArrayWritable.class);
+
+		job.setNumReduceTasks(1);		// to set correctly
+
+		// Destination File -> to configure
+		// TODO
+		FileInputFormat.addInputPath(job, new Path("INPUT"));
+		FileOutputFormat.setOutputPath(job, new Path("OUTPUT"));
+		job.setInputFormatClass(NLineInputFormat.class);
+		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
+		*/
 	}
 }
