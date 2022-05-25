@@ -7,8 +7,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * Wrapper for ArrayWritable&lt;ByteWritable&gt; objects.
- * TODO
+ * Wrapper for ArrayWritable&lt;BooleanWritable&gt; objects.
+ * It's used as output value of the Reducer.
  */
 public class BooleanArrayWritable extends ArrayWritable {
 
