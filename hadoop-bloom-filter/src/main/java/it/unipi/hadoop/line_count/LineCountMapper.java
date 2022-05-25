@@ -5,15 +5,16 @@ import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
 
-public class LineCountMapper extends Mapper<LongWritable, Text, NullWritable, IntWritable> {
+public class LineCountMapper extends Mapper<LongWritable, Text, IntWritable, NullWritable> {
 
-	private final static NullWritable NULL = NullWritable.get();
-	private final static IntWritable ONE = new IntWritable(1);
+	private final IntWritable RANKING = new IntWritable(0);
+	private static final NullWritable NULL = NullWritable.get();
 
 	@Override
 	public void map (LongWritable key, Text value, Context context)
 			throws IOException, InterruptedException
 	{
-		context.write(NULL, ONE);
+		// TODO Parse input to get ranking @Fabiano
+		context.write(RANKING, NULL);
 	}
 }
