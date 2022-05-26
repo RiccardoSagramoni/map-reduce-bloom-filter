@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
+import it.unipi.hadoop.line_count.LineCountMapper;
+import it.unipi.hadoop.line_count.LineCountReducer;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.conf.Configuration;
@@ -71,10 +73,10 @@ public class BloomFilter {
 
 		// TODO: set correctly
 		job.setJarByClass(BloomFilter.class);
-		job.setMapperClass(BloomFilterMapper.class);	// LineCounterMapper
+		job.setMapperClass(LineCountMapper.class);
 		job.setMapOutputKeyClass(Text.class);
 		job.setMapOutputValueClass(IntWritable.class);
-		job.setReducerClass(BloomFilterReducer.class);			// LineCounterReducer
+		job.setReducerClass(LineCountReducer.class);
 		job.setOutputKeyClass(IntWritable.class);				// TODO: VIntWritable or ByteWritable
 		job.setOutputValueClass(IntWritable.class);
 
