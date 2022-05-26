@@ -8,20 +8,20 @@ import java.io.IOException;
 /**
  * Reducer of the mapreduce application that builds a bloom filter.
  * <ul>
- * <li>Input key: average rating (Text)</li>
+ * <li>Input key: average rating (IntWritable)</li>
  * <li>Input value: array of position to set to 1 in the bloom filter (IntArrayWritable)</li>
- * <li>Output key: average rating (Text)</li>
- * <li>Output value: bloom filter structure (ArrayWritable&lt;ByteWritable&gt;)</li>
+ * <li>Output key: average rating (IntWritable)</li>
+ * <li>Output value: bloom filter structure (BooleanArrayWritable)</li>
  * </ul>
  */
-public class BloomFilterReducer extends Reducer<Text, IntArrayWritable, Text, BooleanArrayWritable>  {
+public class BloomFilterReducer extends Reducer<IntWritable, IntArrayWritable, IntWritable, BooleanArrayWritable>  {
 
 	// Size of the bloom filter (taken from mapreduce configuration)
 	private int BLOOM_FILTER_SIZE;
 	// Writable array for the result of the reducer (i.e. the bloom filter)
-	private static final BooleanArrayWritable SERIALIZABLE_BLOOM_FILTER = new BooleanArrayWritable();
+	private final BooleanArrayWritable SERIALIZABLE_BLOOM_FILTER = new BooleanArrayWritable();
 	// Value to set the corresponding item of the bloom filter in the case of a hit
-	private static final byte HIT_VALUE = 1;
+	private static final boolean HIT_VALUE = true;
 
 	@Override
 	public void setup (Context context) {
@@ -30,11 +30,11 @@ public class BloomFilterReducer extends Reducer<Text, IntArrayWritable, Text, Bo
 	}
 
 	@Override
-	public void reduce (Text key, Iterable<IntArrayWritable> values, Context context)
+	public void reduce (IntWritable key, Iterable<IntArrayWritable> values, Context context)
 			throws IOException, InterruptedException
 	{
-		// Instantiate the temporary bloom filter, i.e. an array of ByteWritable
-		ByteWritable[] bloomFilter = new ByteWritable[BLOOM_FILTER_SIZE];
+		// Instantiate the temporary bloom filter, i.e. an array of BooleanWritable
+		BooleanWritable[] bloomFilter = new BooleanWritable[BLOOM_FILTER_SIZE];
 
 		// Iterate the intermediate data
 		for (IntArrayWritable array : values) {
@@ -52,7 +52,7 @@ public class BloomFilterReducer extends Reducer<Text, IntArrayWritable, Text, Bo
 					continue;
 				}
 
-				// Set to 1 the corresponding item of the array
+				// Set to true the corresponding item of the array
 				if (bloomFilter[index].get() != HIT_VALUE) {
 					bloomFilter[index].set(HIT_VALUE);
 				}
