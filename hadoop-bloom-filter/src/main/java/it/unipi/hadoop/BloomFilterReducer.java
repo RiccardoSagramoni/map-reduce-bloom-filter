@@ -33,6 +33,8 @@ public class BloomFilterReducer extends Reducer<IntWritable, IntArrayWritable, I
 	public void reduce (IntWritable key, Iterable<IntArrayWritable> values, Context context)
 			throws IOException, InterruptedException
 	{
+
+
 		// Instantiate the temporary bloom filter, i.e. an array of BooleanWritable
 		BooleanWritable[] bloomFilter = new BooleanWritable[BLOOM_FILTER_SIZE];
 
