@@ -1,5 +1,6 @@
 package it.unipi.hadoop.tester;
 
+import it.unipi.hadoop.BloomFilterMapper;
 import it.unipi.hadoop.writables.GenericObject;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -15,35 +16,35 @@ import org.apache.hadoop.util.GenericOptionsParser;
 
 import java.io.IOException;
 
-// TODO change IntWritable for output mapper to ByteWritable or VIntWritable
-
 public class BloomFilterTester {
 
 	private static final int NUMBER_OF_REDUCERS = 1; // TODO set correctly
 	private static final int LINES_PER_MAP = 5; // TODO set correctly
 
 
-	public static void main (String[] args) throws IOException, InterruptedException, ClassNotFoundException {
-
+	public static void main (String[] args) 
+				throws IOException, InterruptedException, ClassNotFoundException
+	{
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-		if (otherArgs.length < 4) { // TODO
-			System.err.println("Usage: BloomFilter <false positive p> <input file> <output file> <intermediate out file>");
-			System.exit(2);
+		if (otherArgs.length < 3) {
+			System.err.println("Usage: BloomFilterTester <dataset file for testing> " +
+					"<file with the bloom filters> <output file>");
+			System.exit(1);
 		}
+
 
 		// Create MapReduce job
 		Job job = Job.getInstance(conf, "BloomFilter Tester");
-		job.setJarByClass(ReducerTester.class);
+		job.setJarByClass(BloomFilterTester.class);
 
-		// todo input format set
 
 		// Configure mapper which distributes the dataset
 		MultipleInputs.addInputPath(
 				job,
 				new Path(args[0]),
 				NLineInputFormat.class,
-				MapperDataset.class
+				BloomFilterMapper.class // Reuse mapper for building bloom filter
 		);
 		job.getConfiguration().setInt(
 				"mapreduce.input.lineinputformat.linespermap",
@@ -53,7 +54,7 @@ public class BloomFilterTester {
 		MultipleInputs.addInputPath(
 				job,
 				new Path(args[1]),
-				// TODO multiple files??? (probably not: mapreduce automatically handles the partition
+				// TODO multiple files??? (probably not: mapreduce automatically handles the partition)
 				SequenceFileInputFormat.class,
 				MapperBloomFilters.class
 		);
