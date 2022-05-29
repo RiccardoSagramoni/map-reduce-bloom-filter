@@ -14,14 +14,12 @@ import java.io.IOException;
  * <li>Output value: bloom filter structure (BooleanArrayWritable)</li>
  * </ul>
  */
-public class BloomFilterReducer extends Reducer<IntWritable, IntArrayWritable, IntWritable, BooleanArrayWritable>  {
+public class BloomFilterReducer extends Reducer<ByteWritable, IntArrayWritable, ByteWritable, BooleanArrayWritable>  {
 
 	// Size of the bloom filter (taken from mapreduce configuration)
 	private int BLOOM_FILTER_SIZE;
 	// Writable array for the result of the reducer (i.e. the bloom filter)
 	private final BooleanArrayWritable SERIALIZABLE_BLOOM_FILTER = new BooleanArrayWritable();
-	// Value to set the corresponding item of the bloom filter in the case of a hit
-	private static final boolean HIT_VALUE = true;
 
 	@Override
 	public void setup (Context context) {
@@ -30,7 +28,7 @@ public class BloomFilterReducer extends Reducer<IntWritable, IntArrayWritable, I
 	}
 
 	@Override
-	public void reduce (IntWritable key, Iterable<IntArrayWritable> values, Context context)
+	public void reduce (ByteWritable key, Iterable<IntArrayWritable> values, Context context)
 			throws IOException, InterruptedException
 	{
 		// Instantiate the temporary bloom filter, i.e. an array of BooleanWritable
@@ -39,22 +37,22 @@ public class BloomFilterReducer extends Reducer<IntWritable, IntArrayWritable, I
 		// Iterate the intermediate data
 		for (IntArrayWritable array : values) {
 			// Generate an iterable array
-			IntWritable[] intArray = (IntWritable[]) array.toArray();
+			IntWritable[] arrayWithHashedIndexes = (IntWritable[]) array.toArray();
 
 			// Iterate the list of BF indexes produced by mapper's hash functions
-			for (IntWritable i : intArray) {
-				int index = i.get();
+			for (IntWritable i : arrayWithHashedIndexes) {
+				int indexToSet = i.get();
 
 				// Check if index is a valid number
-				if (index >= BLOOM_FILTER_SIZE) {
-					System.err.println("[REDUCER]: index " + index +
+				if (indexToSet >= BLOOM_FILTER_SIZE) {
+					System.err.println("[REDUCER]: index " + indexToSet +
 							" for key " + key + " is not valid");
 					continue;
 				}
 
 				// Set to true the corresponding item of the array
-				if (bloomFilter[index].get() != HIT_VALUE) {
-					bloomFilter[index].set(HIT_VALUE);
+				if (!bloomFilter[indexToSet].get()) {
+					bloomFilter[indexToSet].set(true);
 				}
 			}
 		}
