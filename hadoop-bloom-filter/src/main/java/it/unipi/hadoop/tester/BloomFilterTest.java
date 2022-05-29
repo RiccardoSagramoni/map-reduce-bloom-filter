@@ -11,7 +11,6 @@ public class BloomFilterTest extends Reducer<Text, IntArrayWritable, Text, Doubl
 
     //Size of the bloom filter to be read from the configuration
     private int BLOOM_FILTER_SIZE;
-    private static final boolean HIT_VALUE = true;
     private final DoubleWritable SERIALIZABLE_FALSE_POSITIVE = new DoubleWritable();
 
     @Override
@@ -41,13 +40,13 @@ public class BloomFilterTest extends Reducer<Text, IntArrayWritable, Text, Doubl
                     System.err.println("[TEST-REDUCER]: Index out of bound");
                 }
 
-                if(bloomFilter[index].get() != HIT_VALUE){
+                if(!bloomFilter[index].get()){
                     totalTests++;
                     continue;
                 }
 
                 if(index == (BLOOM_FILTER_SIZE - 1)){
-                    if(bloomFilter[index].get() == HIT_VALUE) {
+                    if(bloomFilter[index].get()) {
                         totalTests++;
                         falsePositives++;
                     }
