@@ -43,7 +43,7 @@ public class BloomFilterTester {
 				job,
 				new Path(args[0]),
 				NLineInputFormat.class,
-				MapperTester1.class
+				MapperDataset.class
 		);
 		job.getConfiguration().setInt(
 				"mapreduce.input.lineinputformat.linespermap",
@@ -55,7 +55,7 @@ public class BloomFilterTester {
 				new Path(args[1]),
 				// TODO multiple files??? (probably not: mapreduce automatically handles the partition
 				SequenceFileInputFormat.class,
-				MapperTester2.class
+				MapperBloomFilters.class
 		);
 
 		// Configure output key/value for mappers
