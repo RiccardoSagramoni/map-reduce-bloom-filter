@@ -6,11 +6,13 @@ import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
 
-public class MapperBloomFilters extends Mapper<IntWritable, BooleanArrayWritable, IntWritable, BooleanArrayWritable> {
-
+public class MapperBloomFilters
+        extends Mapper<IntWritable, BooleanArrayWritable, IntWritable, BooleanArrayWritable>
+{
     @Override
-    protected void map(IntWritable key, BooleanArrayWritable value, Mapper<IntWritable, BooleanArrayWritable, IntWritable, BooleanArrayWritable>.Context context) throws IOException, InterruptedException {
+    public void map(IntWritable key, BooleanArrayWritable value, Context context)
+            throws IOException, InterruptedException
+    {
         super.map(key, value, context);
     }
-
 }
