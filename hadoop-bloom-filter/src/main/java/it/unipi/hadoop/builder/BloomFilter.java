@@ -1,11 +1,12 @@
-package it.unipi.hadoop;
+package it.unipi.hadoop.builder;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-import it.unipi.hadoop.line_count.LineCountMapper;
-import it.unipi.hadoop.line_count.LineCountReducer;
+import it.unipi.hadoop.linecount.LineCountMapper;
+import it.unipi.hadoop.linecount.LineCountReducer;
+import it.unipi.hadoop.writables.IntArrayWritable;
 import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
@@ -94,7 +95,6 @@ public class BloomFilter {
 	}
 
 	public static void main (String[] args) throws Exception {
-		boolean succeded = true;
 
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
@@ -106,7 +106,11 @@ public class BloomFilter {
 		// output file from lineCount == input file for BloomFilter
 		String intermediate_file = otherArgs[3];
 
-		succeded = runMapReduceLineCountBuilder(conf, new Path(otherArgs[1]), new Path(intermediate_file));
+		boolean succeded = runMapReduceLineCountBuilder(
+				conf,
+				new Path(otherArgs[1]),
+				new Path(intermediate_file)
+		);
 		if (!succeded) {
 			System.err.println("LineCount failed");
 			System.exit(1);
@@ -117,8 +121,13 @@ public class BloomFilter {
 		System.out.println("First line is : " + n);
 		br.close();
 
-		succeded = runBloomFilterBuilder(conf, Integer.getInteger(otherArgs[0]), Integer.getInteger(n),
-				new Path(otherArgs[1]), new Path(otherArgs[2]));
+		succeded = runBloomFilterBuilder(
+				conf,
+				Integer.getInteger(otherArgs[0]),
+				Integer.getInteger(n),
+				new Path(otherArgs[1]),
+				new Path(otherArgs[2])
+		);
 		if (!succeded) {
 			System.err.println("BloomFilter failed");
 			System.exit(1);

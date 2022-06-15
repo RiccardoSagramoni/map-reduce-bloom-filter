@@ -1,5 +1,6 @@
-package it.unipi.hadoop;
+package it.unipi.hadoop.builder;
 
+import it.unipi.hadoop.writables.IntArrayWritable;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.util.hash.*;

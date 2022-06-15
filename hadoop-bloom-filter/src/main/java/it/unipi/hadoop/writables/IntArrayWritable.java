@@ -1,4 +1,4 @@
-package it.unipi.hadoop;
+package it.unipi.hadoop.writables;
 
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;

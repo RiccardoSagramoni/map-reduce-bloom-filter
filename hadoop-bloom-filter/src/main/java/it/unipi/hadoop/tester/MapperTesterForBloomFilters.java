@@ -1,6 +1,6 @@
 package it.unipi.hadoop.tester;
 
-import it.unipi.hadoop.BooleanArrayWritable;
+import it.unipi.hadoop.writables.BooleanArrayWritable;
 import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.mapreduce.Mapper;
 

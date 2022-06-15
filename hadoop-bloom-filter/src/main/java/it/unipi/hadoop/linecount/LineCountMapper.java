@@ -1,4 +1,4 @@
-package it.unipi.hadoop.line_count;
+package it.unipi.hadoop.linecount;
 
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Mapper;

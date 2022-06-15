@@ -1,7 +1,7 @@
 package it.unipi.hadoop.tester;
 
-import it.unipi.hadoop.BooleanArrayWritable;
-import it.unipi.hadoop.IntArrayWritable;
+import it.unipi.hadoop.writables.BooleanArrayWritable;
+import it.unipi.hadoop.writables.IntArrayWritable;
 import it.unipi.hadoop.writables.GenericObject;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Reducer;
