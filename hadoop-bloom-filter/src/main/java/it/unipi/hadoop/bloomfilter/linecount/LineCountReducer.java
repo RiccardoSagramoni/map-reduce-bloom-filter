@@ -1,4 +1,4 @@
-package it.unipi.hadoop.linecount;
+package it.unipi.hadoop.bloomfilter.linecount;
 
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Reducer;

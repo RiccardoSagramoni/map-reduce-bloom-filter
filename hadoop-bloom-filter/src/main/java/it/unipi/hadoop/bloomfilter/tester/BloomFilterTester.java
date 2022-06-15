@@ -1,7 +1,7 @@
-package it.unipi.hadoop.tester;
+package it.unipi.hadoop.bloomfilter.tester;
 
-import it.unipi.hadoop.builder.BloomFilterMapper;
-import it.unipi.hadoop.writables.GenericObject;
+import it.unipi.hadoop.bloomfilter.builder.BloomFilterMapper;
+import it.unipi.hadoop.bloomfilter.writables.GenericObject;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ByteWritable;

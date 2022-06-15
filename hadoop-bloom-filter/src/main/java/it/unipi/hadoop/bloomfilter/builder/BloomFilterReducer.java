@@ -1,7 +1,7 @@
-package it.unipi.hadoop.builder;
+package it.unipi.hadoop.bloomfilter.builder;
 
-import it.unipi.hadoop.writables.BooleanArrayWritable;
-import it.unipi.hadoop.writables.IntArrayWritable;
+import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
+import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Reducer;
 

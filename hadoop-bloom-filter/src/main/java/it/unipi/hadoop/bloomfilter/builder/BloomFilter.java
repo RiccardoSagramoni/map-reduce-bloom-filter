@@ -1,12 +1,12 @@
-package it.unipi.hadoop.builder;
+package it.unipi.hadoop.bloomfilter.builder;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-import it.unipi.hadoop.linecount.LineCountMapper;
-import it.unipi.hadoop.linecount.LineCountReducer;
-import it.unipi.hadoop.writables.IntArrayWritable;
+import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
+import it.unipi.hadoop.bloomfilter.linecount.LineCountMapper;
+import it.unipi.hadoop.bloomfilter.linecount.LineCountReducer;
 import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;

@@ -1,4 +1,4 @@
-package it.unipi.hadoop.writables;
+package it.unipi.hadoop.bloomfilter.writables;
 
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.BooleanWritable;
