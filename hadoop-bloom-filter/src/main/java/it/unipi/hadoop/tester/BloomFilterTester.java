@@ -56,7 +56,7 @@ public class BloomFilterTester {
 				new Path(args[1]),
 				// TODO multiple files??? (probably not: mapreduce automatically handles the partition)
 				SequenceFileInputFormat.class,
-				MapperBloomFilters.class
+				MapperTesterForBloomFilters.class
 		);
 
 		// Configure output key/value for mappers
