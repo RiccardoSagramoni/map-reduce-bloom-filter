@@ -1,7 +1,5 @@
-package it.unipi.hadoop.writables;
+package it.unipi.hadoop.bloomfilter.writables;
 
-import it.unipi.hadoop.BooleanArrayWritable;
-import it.unipi.hadoop.IntArrayWritable;
 import org.apache.hadoop.io.GenericWritable;
 
 public class GenericObject extends GenericWritable {

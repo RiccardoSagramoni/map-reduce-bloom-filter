@@ -1,8 +1,8 @@
-package it.unipi.hadoop.tester;
+package it.unipi.hadoop.bloomfilter.tester;
 
-import it.unipi.hadoop.BooleanArrayWritable;
-import it.unipi.hadoop.IntArrayWritable;
-import it.unipi.hadoop.writables.GenericObject;
+import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
+import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
+import it.unipi.hadoop.bloomfilter.writables.GenericObject;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Reducer;
 
