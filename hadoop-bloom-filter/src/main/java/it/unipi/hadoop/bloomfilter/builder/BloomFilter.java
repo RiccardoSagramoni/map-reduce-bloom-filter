@@ -1,15 +1,14 @@
 package it.unipi.hadoop.bloomfilter.builder;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
+import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
 import it.unipi.hadoop.bloomfilter.linecount.LineCountMapper;
 import it.unipi.hadoop.bloomfilter.linecount.LineCountReducer;
-import org.apache.hadoop.io.ByteWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
@@ -22,17 +21,29 @@ public class BloomFilter {
 	private static final int NUMBER_OF_REDUCERS = 4;
 	private static final int LINES_PER_MAP = 10000;
 
+	private static final Map<Byte, Integer> numberOfHashFunctions = new HashMap<>();
+	private static final Map<Byte, Integer> sizeOfBloomFilters = new HashMap<>();
+
+
+
 	private static int computeK(double p) {
 		return (int)(Math.ceil(-(Math.log(p)/(Math.log(2)))));
 	}
+
+
 
 	private static int computeM(double p, int n) {
 		return (int)(Math.ceil(-(n * Math.log(p)) / (2 * (Math.log(2)))));
 	}
 
-	private static boolean runBloomFilterBuilder(Configuration conf, double p, int n, Path input_path, Path output_path)
-			throws IOException, ClassNotFoundException, InterruptedException {
 
+
+	private static boolean runBloomFilterBuilder (Configuration conf,
+	                                              double p, int n,
+	                                              Path input_path,
+	                                              Path output_path)
+			throws IOException, ClassNotFoundException, InterruptedException
+	{
 		// creation of MapReduce job
 		Job job = Job.getInstance(conf, "BloomFilter");
 
@@ -47,12 +58,12 @@ public class BloomFilter {
 		// mapper configuration
 		job.setMapperClass(BloomFilterMapper.class);
 		job.setMapOutputKeyClass(ByteWritable.class);
-		job.setMapOutputValueClass(IntArrayWritable.class);		// TODO change with GenericObject ?
+		job.setMapOutputValueClass(IntArrayWritable.class);
 
 		// reducer configuration
 		job.setReducerClass(BloomFilterReducer.class);
-		job.setOutputKeyClass(IntWritable.class);
-		job.setOutputValueClass(IntArrayWritable.class);	// TODO change with BooleanArrayWritable
+		job.setOutputKeyClass(ByteWritable.class);
+		job.setOutputValueClass(BooleanArrayWritable.class);
 		job.setNumReduceTasks(NUMBER_OF_REDUCERS);
 
 		// input configuration
@@ -67,6 +78,8 @@ public class BloomFilter {
 		return job.waitForCompletion(true);
 	}
 
+
+
 	// TODO: delete this method when implemented another solution
 	private static boolean runMapReduceLineCountBuilder(Configuration conf, Path input_path, Path output_path)
 			throws IOException, ClassNotFoundException, InterruptedException {
@@ -74,14 +87,13 @@ public class BloomFilter {
 		// Job configuration
 		Job job = Job.getInstance(conf, "BloomFilterLineCounter");
 
-		// TODO: set correctly
 		job.setJarByClass(BloomFilter.class);
 		job.setMapperClass(LineCountMapper.class);
-		job.setMapOutputKeyClass(IntWritable.class);
+		job.setMapOutputKeyClass(ByteWritable.class);
 		job.setMapOutputValueClass(NullWritable.class);
 
 		job.setReducerClass(LineCountReducer.class);
-		job.setOutputKeyClass(IntWritable.class);				// TODO: VIntWritable or ByteWritable
+		job.setOutputKeyClass(ByteWritable.class);
 		job.setOutputValueClass(IntWritable.class);
 
 		job.setInputFormatClass(NLineInputFormat.class);
@@ -94,12 +106,40 @@ public class BloomFilter {
 		return job.waitForCompletion(true);
 	}
 
+
+
+	private static void buildParameterMaps (String path) throws IOException {
+
+		Path inFile = new Path(path);
+
+		ByteWritable key = new ByteWritable();
+		IntWritable value = new IntWritable();
+
+		try (SequenceFile.Reader reader =
+				    new SequenceFile.Reader(
+							new Configuration(),
+						    SequenceFile.Reader.file(inFile),
+						    SequenceFile.Reader.bufferSize(4096)
+				    )
+		){
+			while (reader.next(key, value)) {
+				System.out.println("Key " + key + "Value " + value);
+				// compute k e m e costruisci le due hash maps
+			}
+		}
+
+	}
+
+
+
+
 	public static void main (String[] args) throws Exception {
 
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		if (otherArgs.length < 4) {
-			System.err.println("Usage: BloomFilter <false positive p> <input file> <output file> <intermediate out file>");
+			System.err.println("Usage: BloomFilter <false positive p> <input file> " +
+					"<output file> <intermediate out file>");
 			System.exit(2);
 		}
 
@@ -116,10 +156,7 @@ public class BloomFilter {
 			System.exit(1);
 		}
 
-		BufferedReader br = new BufferedReader(new FileReader(intermediate_file));
-		String n = br.readLine();
-		System.out.println("First line is : " + n);
-		br.close();
+		// read file
 
 		succeded = runBloomFilterBuilder(
 				conf,

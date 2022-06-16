@@ -7,6 +7,7 @@ import org.apache.hadoop.util.hash.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.StringTokenizer;
 
 public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, IntArrayWritable> {
@@ -30,7 +31,7 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 	@Override
 	public void setup (Mapper.Context context) {
 		// Retrieve configuration
-		HASH_FUNCTIONS_NUMBER = context.getConfiguration().getInt("bloom.filter.hash", 0);
+		HASH_FUNCTIONS_NUMBER = context.getConfiguration().getClass("bloom.filter.hash", List<Integer>.class);
 	}
 
 	@Override
