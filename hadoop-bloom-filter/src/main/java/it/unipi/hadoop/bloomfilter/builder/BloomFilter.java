@@ -44,8 +44,8 @@ public class BloomFilter {
 	 * TODO
 	 * @param conf
 	 * @param falsePositiveProbability
-	 * @param input_path
-	 * @param output_path
+	 * @param inputPath
+	 * @param outputPath
 	 * @return
 	 * @throws IOException
 	 * @throws ClassNotFoundException
@@ -53,8 +53,8 @@ public class BloomFilter {
 	 */
 	private static boolean runBloomFilterBuilder (Configuration conf,
 												  double falsePositiveProbability,
-	                                              Path input_path,
-	                                              Path output_path,
+	                                              Path inputPath,
+	                                              Path outputPath,
 	                                              Map<Byte, Integer> sizeOfBloomFilters)
 			throws IOException, ClassNotFoundException, InterruptedException
 	{
@@ -93,7 +93,7 @@ public class BloomFilter {
 
 		// Input configuration
 		job.setInputFormatClass(NLineInputFormat.class);
-		NLineInputFormat.setInputPaths(job, input_path);
+		NLineInputFormat.setInputPaths(job, inputPath);
 		job.getConfiguration().setInt(
 				"mapreduce.input.lineinputformat.linespermap",
 				LINES_PER_MAP
@@ -101,7 +101,7 @@ public class BloomFilter {
 
 		// Output configuration
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
-		SequenceFileOutputFormat.setOutputPath(job, output_path);
+		SequenceFileOutputFormat.setOutputPath(job, outputPath);
 
 		return job.waitForCompletion(true);
 	}

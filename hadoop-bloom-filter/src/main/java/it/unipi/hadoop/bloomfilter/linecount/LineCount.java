@@ -16,12 +16,11 @@ public class LineCount {
 	private static final int LINES_PER_MAP = 10000;
 
 
-
-	private static boolean runMapReduceLineCountBuilder (Configuration conf, Path input_path, Path output_path)
+	private static boolean runLineCounter (Configuration conf, Path input_path, Path output_path)
 			throws IOException, ClassNotFoundException, InterruptedException
 	{
 		// Create MapReduce job
-		Job job = Job.getInstance(conf, "BloomFilterLineCounter");
+		Job job = Job.getInstance(conf, "LineCounter");
 
 		// Configure JAR
 		job.setJarByClass(LineCount.class);
@@ -59,21 +58,19 @@ public class LineCount {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		if (otherArgs.length < 3) {
-			System.err.println("Usage: BloomFilter <false positive p> <input file> " +
-					"<output file>");
+			System.err.println("Usage: BloomFilter <false positive p> <input file> <output file>");
 			System.exit(2);
 		}
 
-		boolean succeded = runMapReduceLineCountBuilder(
+		boolean succeeded = runLineCounter(
 				conf,
 				new Path(otherArgs[1]),
 				new Path(otherArgs[2])
 		);
-		if (!succeded) {
+		if (!succeeded) {
 			System.err.println("LineCount failed");
 			System.exit(1);
 		}
 
 	}
 }
-
