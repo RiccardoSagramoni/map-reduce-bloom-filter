@@ -5,12 +5,12 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
 
-public class LineCountReducer extends Reducer<IntWritable, NullWritable, IntWritable, IntWritable> {
+public class LineCountReducer extends Reducer<ByteWritable, NullWritable, ByteWritable, IntWritable> {
 
 	private final IntWritable result = new IntWritable();
 
 	@Override
-	public void reduce (IntWritable key, Iterable<NullWritable> values, Context context)
+	public void reduce (ByteWritable key, Iterable<NullWritable> values, Context context)
 			throws IOException, InterruptedException
 	{
 		// Count the input  (i.e. the lines in the file)

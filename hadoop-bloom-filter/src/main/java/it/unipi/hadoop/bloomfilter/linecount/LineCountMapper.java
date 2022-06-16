@@ -5,9 +5,9 @@ import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
 
-public class LineCountMapper extends Mapper<LongWritable, Text, IntWritable, NullWritable> {
+public class LineCountMapper extends Mapper<LongWritable, Text, ByteWritable, NullWritable> {
 
-	private final IntWritable RANKING = new IntWritable(0);
+	private final ByteWritable RANKING = new ByteWritable((byte) 0);
 	private static final NullWritable NULL = NullWritable.get();
 
 	@Override

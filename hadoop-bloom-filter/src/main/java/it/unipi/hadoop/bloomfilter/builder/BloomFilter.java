@@ -19,8 +19,8 @@ import org.apache.hadoop.util.GenericOptionsParser;
 
 public class BloomFilter {
 
-	private static final int NUMBER_OF_REDUCERS = 1;	// TODO set correctly
-	private static final int LINES_PER_MAP = 5;			// TODO set according to the file size
+	private static final int NUMBER_OF_REDUCERS = 4;
+	private static final int LINES_PER_MAP = 10000;
 
 	private static int computeK(double p) {
 		return (int)(Math.ceil(-(Math.log(p)/(Math.log(2)))));

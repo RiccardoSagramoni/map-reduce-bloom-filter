@@ -8,8 +8,9 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
 
-public class ReducerTester extends Reducer<ByteWritable, GenericObject, ByteWritable, DoubleWritable>  {
-
+public class ReducerTester
+		extends Reducer<ByteWritable, GenericObject, ByteWritable, DoubleWritable>
+{
 	// Size of the bloom filter to be read from the configuration
 	private int BLOOM_FILTER_SIZE;
 	private final DoubleWritable SERIALIZABLE_FALSE_POSITIVE = new DoubleWritable();
