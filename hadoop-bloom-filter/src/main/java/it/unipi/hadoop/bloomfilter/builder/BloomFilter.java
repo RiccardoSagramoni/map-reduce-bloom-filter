@@ -2,7 +2,6 @@ package it.unipi.hadoop.bloomfilter.builder;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
@@ -22,7 +21,7 @@ public class BloomFilter {
 	private static final int NUMBER_OF_REDUCERS = 4;
 	private static final int LINES_PER_MAP = 10000;
 
-	private static final Map<Byte, Integer> sizeOfBloomFilters = new LinkedHashMap<>();
+	private static final Map<Byte, Integer> sizeOfBloomFilters = new HashMap<>();
 
 
 
