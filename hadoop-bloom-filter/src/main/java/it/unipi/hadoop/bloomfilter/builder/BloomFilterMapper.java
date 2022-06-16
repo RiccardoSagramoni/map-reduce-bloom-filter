@@ -12,8 +12,8 @@ import java.util.StringTokenizer;
 
 public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, IntArrayWritable> {
 
-	// Number of hash functions that must be applied for each rating
-	private int[] HASH_FUNCTIONS_NUMBER;
+	//Number of hash functions that must be applied
+	private int HASH_FUNCTIONS_NUMBER;
 
 	//Array of IntWritable for the output value of the mapper
 	private final IntArrayWritable outputValue = new IntArrayWritable();
@@ -31,30 +31,7 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 	@Override
 	public void setup (Mapper.Context context) {
 		// Retrieve configuration
-		Configuration configuration = context.getConfiguration();
-
-		// Read how many bloom filters will be created and allocate the array for the hash functions
-		int howManyBloomFilters = configuration.getInt("bloom.filter.number", -1);
-		if (howManyBloomFilters <= 0) {
-			System.err.println("[MAPPER]: bloom.filter.number parameter not set");
-			return;
-		}
-		HASH_FUNCTIONS_NUMBER = new int[howManyBloomFilters];
-
-		// Read how many hash functions are required for each bloom filter
-		// and build the array HASH_FUNCTIONS_NUMBER
-		for (int i = 0; i < howManyBloomFilters; i++) {
-			int howManyHashFunctions = configuration.getInt(
-					"bloom.filter.hash." + i,
-					-1
-			);
-			if (howManyHashFunctions <= 0) {
-				System.err.println("[MAPPER]: bloom.filter.hash." + i + " parameter not set");
-				return;
-			}
-			HASH_FUNCTIONS_NUMBER[i] = howManyHashFunctions;
-		}
-
+		HASH_FUNCTIONS_NUMBER = context.getConfiguration().getInt("bloom.filter.hash", 0);
 	}
 
 	@Override
@@ -77,11 +54,10 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 		byte rating = (byte) Math.round(Double.parseDouble(tokens[1]));
 
 		//Local array of IntWritable to contain the hashes of the movie's id
-		int hashFunctionsNumber = HASH_FUNCTIONS_NUMBER[rating];
-		IntWritable[] hashes = new IntWritable[hashFunctionsNumber];
+		IntWritable[] hashes = new IntWritable[HASH_FUNCTIONS_NUMBER];
 
 		//Apply the hash function with different seeds, to obtain HASH_FUNCTIONS_NUMBER values
-		for(int i = 0; i < hashFunctionsNumber; i ++){
+		for(int i = 0; i < HASH_FUNCTIONS_NUMBER; i ++){
 			int hashValue = hash.hash(movieId.getBytes(StandardCharsets.UTF_8), i);
 			hashes[i] = new IntWritable(hashValue);
 		}

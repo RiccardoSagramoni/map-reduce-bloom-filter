@@ -2,6 +2,7 @@ package it.unipi.hadoop.bloomfilter.builder;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
@@ -21,25 +22,23 @@ public class BloomFilter {
 	private static final int NUMBER_OF_REDUCERS = 4;
 	private static final int LINES_PER_MAP = 10000;
 
-	private static final Map<Byte, Integer> numberOfHashFunctions = new HashMap<>();
-	private static final Map<Byte, Integer> sizeOfBloomFilters = new HashMap<>();
+	private static final Map<Byte, Integer> sizeOfBloomFilters = new LinkedHashMap<>();
 
 
 
-	private static int computeK(double p) {
-		return (int)(Math.ceil(-(Math.log(p)/(Math.log(2)))));
+	private static int computeNumberOfHashFunctions (double falsePositiveProbability) {
+		return (int)(Math.ceil(-(Math.log(falsePositiveProbability)/(Math.log(2)))));
 	}
 
 
 
-	private static int computeM(double p, int n) {
-		return (int)(Math.ceil(-(n * Math.log(p)) / (2 * (Math.log(2)))));
+	private static int computeSizeOfBloomFilter (double falsePositiveProbability, int numberOfInputs) {
+		return (int)(Math.ceil(-(numberOfInputs * Math.log(falsePositiveProbability)) / (2 * (Math.log(2)))));
 	}
-
 
 
 	private static boolean runBloomFilterBuilder (Configuration conf,
-	                                              double p, int n,
+												  int falsePositiveProbability,
 	                                              Path input_path,
 	                                              Path output_path)
 			throws IOException, ClassNotFoundException, InterruptedException
@@ -47,31 +46,45 @@ public class BloomFilter {
 		// creation of MapReduce job
 		Job job = Job.getInstance(conf, "BloomFilter");
 
-		// BloomFilter parameters
-		int m = computeM(p, n);
-		int k = computeK(p);
-		job.getConfiguration().setInt("bloom.filter.size", m);
-		job.getConfiguration().setInt("bloom.filter.hash", k);
+		// Set bloomFilter parameters
+		job.getConfiguration().setInt(
+				"bloom.filter.number", // how many bloom filter must be created
+				sizeOfBloomFilters.size()
+		);
+		sizeOfBloomFilters.forEach( (k, v) ->
+				job.getConfiguration().setInt(
+						"bloom.filter.size." + k, // size of k-th bloom filter
+						v
+				)
+		);
+		job.getConfiguration().setInt(
+				"bloom.filter.hash", // how many hash functions for each bloom filter
+				computeNumberOfHashFunctions(falsePositiveProbability)
+		);
 
+		// Configure whole application
 		job.setJarByClass(BloomFilter.class);
 
-		// mapper configuration
+		// Mapper configuration
 		job.setMapperClass(BloomFilterMapper.class);
 		job.setMapOutputKeyClass(ByteWritable.class);
 		job.setMapOutputValueClass(IntArrayWritable.class);
 
-		// reducer configuration
+		// Reducer configuration
 		job.setReducerClass(BloomFilterReducer.class);
 		job.setOutputKeyClass(ByteWritable.class);
 		job.setOutputValueClass(BooleanArrayWritable.class);
 		job.setNumReduceTasks(NUMBER_OF_REDUCERS);
 
-		// input configuration
+		// Input configuration
 		job.setInputFormatClass(NLineInputFormat.class);
 		NLineInputFormat.setInputPaths(job, input_path);
-		job.getConfiguration().setInt("mapreduce.input.lineinputformat.linespermap", LINES_PER_MAP);
+		job.getConfiguration().setInt(
+				"mapreduce.input.lineinputformat.linespermap",
+				LINES_PER_MAP
+		);
 
-		// output configuration
+		// Output configuration
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 		SequenceFileOutputFormat.setOutputPath(job, output_path);
 
@@ -116,14 +129,14 @@ public class BloomFilter {
 		try (SequenceFile.Reader reader =
 				    new SequenceFile.Reader(
 							new Configuration(),
-						    SequenceFile.Reader.file(inFile),
-						    SequenceFile.Reader.bufferSize(4096)
+						    SequenceFile.Reader.file(inFile)
 				    )
 		){
 			while (reader.next(key, value)) {
-				System.out.println("Key " + key + "Value " + value);
-				numberOfHashFunctions.put(key.get(), computeK(p));
-				sizeOfBloomFilters.put(key.get(), computeM(p, value.get()));
+				sizeOfBloomFilters.put(
+						key.get(),
+						computeSizeOfBloomFilter(p, value.get())
+				);
 			}
 		}
 
@@ -155,13 +168,12 @@ public class BloomFilter {
 			System.exit(1);
 		}
 
-		// read file
+		// Read file
 		buildParameterMaps(intermediate_file, Integer.getInteger(otherArgs[0]));
 
 		succeded = runBloomFilterBuilder(
 				conf,
 				Integer.getInteger(otherArgs[0]),
-				Integer.getInteger(n),
 				new Path(otherArgs[1]),
 				new Path(otherArgs[2])
 		);
