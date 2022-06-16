@@ -108,12 +108,10 @@ public class BloomFilter {
 
 
 
-	private static void buildParameterMaps (String path) throws IOException {
-
-		Path inFile = new Path(path);
-
+	private static void buildParameterMaps (Path inFile, Integer p) throws IOException {
 		ByteWritable key = new ByteWritable();
 		IntWritable value = new IntWritable();
+		int k, m;
 
 		try (SequenceFile.Reader reader =
 				    new SequenceFile.Reader(
@@ -124,7 +122,10 @@ public class BloomFilter {
 		){
 			while (reader.next(key, value)) {
 				System.out.println("Key " + key + "Value " + value);
-				// compute k e m e costruisci le due hash maps
+				k = computeK(p);
+				m = computeM(p, value.get());
+				numberOfHashFunctions.put(key.get(), k);
+				sizeOfBloomFilters.put(key.get(), m);
 			}
 		}
 
@@ -157,6 +158,7 @@ public class BloomFilter {
 		}
 
 		// read file
+		buildParameterMaps(new Path(otherArgs[0]), Integer.getInteger(otherArgs[0]));
 
 		succeded = runBloomFilterBuilder(
 				conf,
