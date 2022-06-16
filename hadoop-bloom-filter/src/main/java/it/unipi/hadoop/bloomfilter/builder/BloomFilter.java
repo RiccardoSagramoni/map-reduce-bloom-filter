@@ -108,7 +108,8 @@ public class BloomFilter {
 
 
 
-	private static void buildParameterMaps (Path inFile, Integer p) throws IOException {
+	private static void buildParameterMaps (String path, Integer p) throws IOException {
+		Path inFile = new Path(path);
 		ByteWritable key = new ByteWritable();
 		IntWritable value = new IntWritable();
 		int k, m;
@@ -158,7 +159,7 @@ public class BloomFilter {
 		}
 
 		// read file
-		buildParameterMaps(new Path(otherArgs[0]), Integer.getInteger(otherArgs[0]));
+		buildParameterMaps(intermediate_file, Integer.getInteger(otherArgs[0]));
 
 		succeded = runBloomFilterBuilder(
 				conf,
