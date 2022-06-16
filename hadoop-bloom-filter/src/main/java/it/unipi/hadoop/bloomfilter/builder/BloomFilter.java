@@ -112,7 +112,6 @@ public class BloomFilter {
 		Path inFile = new Path(path);
 		ByteWritable key = new ByteWritable();
 		IntWritable value = new IntWritable();
-		int k, m;
 
 		try (SequenceFile.Reader reader =
 				    new SequenceFile.Reader(
@@ -123,10 +122,8 @@ public class BloomFilter {
 		){
 			while (reader.next(key, value)) {
 				System.out.println("Key " + key + "Value " + value);
-				k = computeK(p);
-				m = computeM(p, value.get());
-				numberOfHashFunctions.put(key.get(), k);
-				sizeOfBloomFilters.put(key.get(), m);
+				numberOfHashFunctions.put(key.get(), computeK(p));
+				sizeOfBloomFilters.put(key.get(), computeM(p, value.get()));
 			}
 		}
 
