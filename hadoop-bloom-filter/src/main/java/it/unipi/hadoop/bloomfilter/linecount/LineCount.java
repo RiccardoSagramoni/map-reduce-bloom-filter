@@ -7,7 +7,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
 public class LineCount {
@@ -45,8 +45,8 @@ public class LineCount {
 		);
 
 		// Output configuration
-		job.setOutputFormatClass(SequenceFileOutputFormat.class);
-		SequenceFileOutputFormat.setOutputPath(job, output_path);
+		job.setOutputFormatClass(TextOutputFormat.class);
+		TextOutputFormat.setOutputPath(job, output_path);
 
 		return job.waitForCompletion(true);
 	}

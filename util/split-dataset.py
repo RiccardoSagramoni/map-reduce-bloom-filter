@@ -4,17 +4,30 @@
 """
 
 from pyspark import SparkContext
+import argparse
 
 # Approximate portion of dataset chosen for building the bloom filters
 TRAINING_DATASET_PORTION = 0.6
 
-if __name__ == '__main__':
+
+def parse_arguments():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('filename', type=str, help='name of the input file inside the `data` folder')
+	args = parser.parse_args()
+	return args.filename
+
+
+def main():
 	print("\nSTART SPLIT_DATASET\n")
 
+	# Parse command line arguments for the filename
+	filename = parse_arguments()
+
+	# Allocate Spark context
 	sc = SparkContext(appName="SPLIT_DATASET", master="yarn")
 
 	# Read dataset from HDFS
-	dataset = sc.textFile("data/imdb.tsv")
+	dataset = sc.textFile("data/" + filename)
 
 	# Remove header
 	header = dataset.first()
@@ -24,7 +37,11 @@ if __name__ == '__main__':
 	train, test = dataset.randomSplit([TRAINING_DATASET_PORTION, 1 - TRAINING_DATASET_PORTION])
 
 	# Save results into HDFS
-	train.saveAsTextFile("data/train_imdb.tsv")
-	test.saveAsTextFile("data/test_imdb.tsv")
+	train.saveAsTextFile("data/train_" + filename)
+	test.saveAsTextFile("data/test_" + filename)
 
 	print("\nEND SPLIT_DATASET\n")
+
+
+if __name__ == '__main__':
+	main()

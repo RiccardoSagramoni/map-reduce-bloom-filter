@@ -1,6 +1,8 @@
 package it.unipi.hadoop.bloomfilter.builder;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,10 +41,42 @@ public class BloomFilter {
 		return (int)(Math.ceil(-(numberOfInputs * Math.log(falsePositiveProbability)) / (2 * (Math.log(2)))));
 	}
 
+	private static void generateConfiguration (Configuration configuration,
+	                                           double falsePositiveProbability,
+	                                           Map<Byte, Integer> sizeOfBloomFilters)
+	{
+		// Set bloomFilter parameters
+		configuration.setInt(
+				"bloom.filter.number", // how many bloom filter must be created
+				sizeOfBloomFilters.size()
+		);
+
+		int i = 0;
+		for (Map.Entry<Byte, Integer> entry : sizeOfBloomFilters.entrySet()) {
+			configuration.setInt(
+					"bloom.filter.size.key." + i, // size of k-th bloom filter
+					entry.getKey()
+			);
+			configuration.setInt(
+					"bloom.filter.size.value." + i, // size of k-th bloom filter
+					entry.getValue()
+			);
+			i++;
+		}
+
+		configuration.setInt(
+				"bloom.filter.hash", // how many hash functions for each bloom filter
+				computeNumberOfHashFunctions(falsePositiveProbability)
+		);
+
+		System.out.println("Number of hash functions: " + computeNumberOfHashFunctions(falsePositiveProbability));
+		System.out.println("Rating -> bloom filter size: " + sizeOfBloomFilters);
+	}
+
 
 	/**
 	 * TODO
-	 * @param conf
+	 * @param configuration
 	 * @param falsePositiveProbability
 	 * @param inputPath
 	 * @param outputPath
@@ -51,7 +85,7 @@ public class BloomFilter {
 	 * @throws ClassNotFoundException
 	 * @throws InterruptedException
 	 */
-	private static boolean runBloomFilterBuilder (Configuration conf,
+	private static boolean runBloomFilterBuilder (Configuration configuration,
 												  double falsePositiveProbability,
 	                                              Path inputPath,
 	                                              Path outputPath,
@@ -59,23 +93,9 @@ public class BloomFilter {
 			throws IOException, ClassNotFoundException, InterruptedException
 	{
 		// Creation of MapReduce job
-		Job job = Job.getInstance(conf, "BloomFilter");
+		Job job = Job.getInstance(configuration, "BloomFilter");
 
-		// Set bloomFilter parameters
-		job.getConfiguration().setInt(
-				"bloom.filter.number", // how many bloom filter must be created
-				sizeOfBloomFilters.size()
-		);
-		sizeOfBloomFilters.forEach( (k, v) ->
-				job.getConfiguration().setInt(
-						"bloom.filter.size." + k, // size of k-th bloom filter
-						v
-				)
-		);
-		job.getConfiguration().setInt(
-				"bloom.filter.hash", // how many hash functions for each bloom filter
-				computeNumberOfHashFunctions(falsePositiveProbability)
-		);
+		generateConfiguration(job.getConfiguration(), falsePositiveProbability, sizeOfBloomFilters);
 
 		// Configure JAR
 		job.setJarByClass(BloomFilter.class);
@@ -113,28 +133,37 @@ public class BloomFilter {
 	 * @param falsePositiveProbability
 	 * @throws IOException
 	 */
-	private static Map<Byte, Integer> getBloomFiltersSizeParameters (Path file,
+	private static Map<Byte, Integer> getBloomFiltersSizeParameters (Configuration conf, Path file,
 	                                                                 Double falsePositiveProbability)
 			throws IOException
 	{
+		// Map each rating to the size its corresponding bloom filter
 		Map<Byte, Integer> sizeOfBloomFilters = new HashMap<>();
-		ByteWritable key = new ByteWritable();
-		IntWritable value = new IntWritable();
 
-		try (SequenceFile.Reader reader =
-				    new SequenceFile.Reader(
-							new Configuration(),
-						    SequenceFile.Reader.file(file)
-				    )
+		// Open file in HDFS
+		try (BufferedReader br = new BufferedReader(
+				new InputStreamReader(
+						file.getFileSystem(conf).open(file)
+				)
+			)
 		){
-			while (reader.next(key, value)) {
+			String line;
+
+			// Read each record of the dataset
+			while ((line = br.readLine()) != null) {
+				// Split the record
+				String[] splits = line.split("\\s+");
+
+				// Parse the record and put it in the map
 				sizeOfBloomFilters.put(
-						key.get(),
-						computeSizeOfBloomFilter(falsePositiveProbability, value.get())
+						Byte.parseByte(splits[0]),
+						computeSizeOfBloomFilter(falsePositiveProbability, Integer.parseInt(splits[1]))
 				);
 			}
+
 		}
 
+		System.out.println("Bloom filter input data = " + sizeOfBloomFilters);
 		return sizeOfBloomFilters;
 	}
 
@@ -151,28 +180,29 @@ public class BloomFilter {
 
 		// Parse application arguments
 		String[] otherArgs = new GenericOptionsParser(configuration, args).getRemainingArgs();
-		if (otherArgs.length < 3) {
+		if (otherArgs.length < 4) {
 			System.err.println("Usage: BloomFilter <false positive p> <input file> " +
-					"<output file>");
+					"<output file> <line count output file>");
 			System.exit(2);
 		}
 
 		double falsePositiveProbability = Double.parseDouble(otherArgs[0]);
 		Path input_file = new Path(otherArgs[1]);
 		Path output_file = new Path(otherArgs[2]);
+		Path linecount_file = new Path(otherArgs[3]);
 
 		// Read file
 		Map<Byte, Integer> sizeOfBloomFilters =
-				getBloomFiltersSizeParameters(input_file, falsePositiveProbability);
+				getBloomFiltersSizeParameters(configuration, linecount_file, falsePositiveProbability);
 
-		boolean succeded = runBloomFilterBuilder(
+		boolean succeededJob = runBloomFilterBuilder(
 				configuration,
 				falsePositiveProbability,
 				input_file,
 				output_file,
 				sizeOfBloomFilters
 		);
-		if (!succeded) {
+		if (!succeededJob) {
 			System.err.println("BloomFilter failed");
 			System.exit(1);
 		}
