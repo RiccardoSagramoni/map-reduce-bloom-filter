@@ -39,20 +39,17 @@ public class ReducerTester
 	public void reduce (ByteWritable key, Iterable<GenericObject> values, Context context)
 			throws IOException, InterruptedException {
 
-		LOGGER.info("ReducerKey: " + key);
+		LOGGER.info("[TESTER] ReducerKey: " + key);
 
 		// Declare the bloomFilter
-		BooleanWritable[] bloomFilter = null; /*new BooleanWritable[BLOOM_FILTER_SIZE.get(key.get())];
-		for (int i = 0; i < bloomFilter.length; i++) {
-			bloomFilter[i] = new BooleanWritable(true);
-		}*/
+		BooleanWritable[] bloomFilter = null;
 
 		// Get the bloom filter from the input values
 		for (GenericObject object : values) {
 			if (object.get() instanceof BooleanArrayWritable) {
 				BooleanArrayWritable booleanArrayWritable = (BooleanArrayWritable) object.get();
 				bloomFilter = (BooleanWritable[]) booleanArrayWritable.toArray();
-				LOGGER.info("bloomFilter = " + Arrays.toString(bloomFilter));
+				LOGGER.info("[TESTER] bloomFilter = " + Arrays.toString(bloomFilter));
 				break;
 			}
 		}
@@ -70,7 +67,7 @@ public class ReducerTester
 		// Get the intermediate results from the mapper
 		for (GenericObject object : values) {
 			// Skip the bloom filter
-			if (object.get() instanceof BooleanWritable) {
+			if (object.get() instanceof BooleanArrayWritable) {
 				continue;
 			}
 
@@ -83,6 +80,8 @@ public class ReducerTester
 			// (i.e. the position to hit in the bloom filter)
 			for (IntWritable i : intArray) {
 				int index = i.get();
+				LOGGER.info("[REDUCER-TEST] index: " + index + " key: " + key +
+						" BF_size: " + BLOOM_FILTER_SIZE.get(key.get()));
 
 				if (index < 0 || index >= BLOOM_FILTER_SIZE.get(key.get())) {
 					LOGGER.warn("[Reducer-Test]: index " + index + " for key " + key +

@@ -8,6 +8,7 @@ import it.unipi.hadoop.bloomfilter.writables.GenericObject;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
@@ -116,7 +117,7 @@ public class BloomFilterTester {
 				job,
 				input_dataset,
 				NLineInputFormat.class,
-				BloomFilterMapper.class // Reuse mapper for building bloom filter
+				MapperTester.class // Reuse mapper for building bloom filter
 		);
 		job.getConfiguration().setInt(
 				"mapreduce.input.lineinputformat.linespermap",
@@ -133,7 +134,7 @@ public class BloomFilterTester {
 
 		// Configure output key/value for mappers
 		job.setMapOutputKeyClass(ByteWritable.class);
-		job.setMapOutputValueClass(GenericObject.class);
+		job.setMapOutputValueClass(GenericObject.class);	//GenericObject.class
 
 
 		// Configure reducer
@@ -206,7 +207,7 @@ public class BloomFilterTester {
 		Path input_dataset = new Path(otherArgs[1]);
 		Path output_bloom_filter = new Path(otherArgs[2]);
 		Path output_tester = new Path(otherArgs[3]);
-		Path linecount_output = new Path(otherArgs[4]); // ?
+		Path linecount_output = new Path(otherArgs[4]);
 
 		// Read file
 		Map<Byte, Integer> sizeOfBloomFilters =
