@@ -57,15 +57,15 @@ public class LineCount {
 
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-		if (otherArgs.length < 3) {
-			System.err.println("Usage: BloomFilter <false positive p> <input file> <output file>");
+		if (otherArgs.length < 2) {
+			System.err.println("Usage: BloomFilter <input file> <output file>");
 			System.exit(2);
 		}
 
 		boolean succeeded = runLineCounter(
 				conf,
-				new Path(otherArgs[1]),
-				new Path(otherArgs[2])
+				new Path(otherArgs[0]),
+				new Path(otherArgs[1])
 		);
 		if (!succeeded) {
 			System.err.println("LineCount failed");
