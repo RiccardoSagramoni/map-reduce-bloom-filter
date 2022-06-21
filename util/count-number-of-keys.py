@@ -27,6 +27,7 @@ def main():
 		.map(lambda x: (int(round(float(x[1]))), 1)) \
 		.reduceByKey(lambda x, y: x + y) \
 		.map(lambda x: "{0}\t{1}".format(x[0], x[1])) \
+		.coalesce(1) \
 		.saveAsTextFile(output_file)
 
 
