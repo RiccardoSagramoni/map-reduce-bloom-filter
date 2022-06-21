@@ -20,7 +20,7 @@ def main():
 	input_file, output_file = parse_arguments()
 
 	# Allocate Spark context
-	sc = SparkContext(appName="SPLIT_DATASET", master="yarn")
+	sc = SparkContext(appName="COUNT_NUMBER_OF_KEYS", master="yarn")
 
 	sc.textFile(input_file) \
 		.map(lambda x: x.split('\t')[0:2]) \
