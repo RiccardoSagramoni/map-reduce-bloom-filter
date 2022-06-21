@@ -25,7 +25,7 @@ def main():
 	sc.textFile(input_file) \
 		.map(lambda x: x.split('\t')[0:2]) \
 		.map(lambda x: (int(round(float(x[1]))), 1)) \
-		.reduceByKey(lambda x, y: x + y)\
+		.reduceByKey(lambda x, y: x + y) \
 		.map(lambda x: "{0}\t{1}".format(x[0], x[1])) \
 		.saveAsTextFile(output_file)
 
