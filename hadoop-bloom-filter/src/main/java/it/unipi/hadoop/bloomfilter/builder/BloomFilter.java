@@ -54,7 +54,7 @@ public class BloomFilter {
 		int i = 0;
 		for (Map.Entry<Byte, Integer> entry : sizeOfBloomFilters.entrySet()) {
 			configuration.setInt(
-					"bloom.filter.size.key." + i, // size of k-th bloom filter
+					"bloom.filter.size.key." + i, // rating key of the k-th bloom filter
 					entry.getKey()
 			);
 			configuration.setInt(

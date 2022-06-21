@@ -48,6 +48,7 @@ public class BloomFilterReducer
 	{
 		LOGGER.debug("Reducer key = " + key);
 
+
 		// Instantiate the temporary bloom filter, i.e. an array of BooleanWritable
 		BooleanWritable[] bloomFilter = new BooleanWritable[BLOOM_FILTER_SIZE.get(key.get())];
 		for (int i = 0; i < bloomFilter.length; i++) {
@@ -55,11 +56,14 @@ public class BloomFilterReducer
 		}
 		LOGGER.debug("bloomFilter = " + Arrays.toString(bloomFilter));
 
+
+
 		// Iterate the intermediate data
 		for (IntArrayWritable array : values) {
 			// Generate an iterable array
 			IntWritable[] arrayWithHashedIndexes = (IntWritable[]) array.toArray();
 			LOGGER.debug("IntWritable array = " + Arrays.toString(arrayWithHashedIndexes));
+
 
 			// Iterate the list of BF indexes produced by mapper's hash functions
 			for (IntWritable i : arrayWithHashedIndexes) {
@@ -78,6 +82,7 @@ public class BloomFilterReducer
 					bloomFilter[indexToSet].set(true);
 				}
 			}
+
 		}
 
 		LOGGER.debug("Bloom filter length = " + bloomFilter.length);
@@ -87,4 +92,5 @@ public class BloomFilterReducer
 		SERIALIZABLE_BLOOM_FILTER.set(bloomFilter);
 		context.write(key, SERIALIZABLE_BLOOM_FILTER);
 	}
+
 }
