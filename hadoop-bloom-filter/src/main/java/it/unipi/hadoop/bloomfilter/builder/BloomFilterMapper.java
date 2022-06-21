@@ -71,22 +71,26 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 		}
 		byte rating = (byte) Math.round(Double.parseDouble(itr.nextToken()));
 
+
 		// Local array of IntWritable to contain the hashes of the movie's id
 		IntWritable[] hashes = new IntWritable[HASH_FUNCTIONS_NUMBER];
 
 		// Apply the hash function with different seeds, to obtain HASH_FUNCTIONS_NUMBER values
 		for (int i = 0; i < HASH_FUNCTIONS_NUMBER; i++){
 			int hashValue = hash.hash(movieId.getBytes(StandardCharsets.UTF_8), i);
+
 			hashes[i] = new IntWritable(
 					Math.abs(hashValue % BLOOM_FILTER_SIZE.get(rating))
 			);
+
 			LOGGER.debug("Computed hash n." + i + ": " + hashes[i]);
 		}
+
+		LOGGER.debug("WRITE (key, value) = ( " + rating + ",  " + Arrays.toString(hashes) + " )");
 
 		// Setting the output values
 		outputKey.set(rating);
 		outputValue.set(hashes);
-		LOGGER.debug("WRITE (key, value) = ( " + rating + ",  " + Arrays.toString(hashes) + " )");
 
 		// Emit the key-value pair
 		context.write(outputKey, outputValue);
