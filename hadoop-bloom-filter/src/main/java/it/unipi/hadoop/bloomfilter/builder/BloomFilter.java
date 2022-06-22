@@ -38,7 +38,11 @@ public class BloomFilter {
 	 * @return
 	 */
 	private static int computeSizeOfBloomFilter (double falsePositiveProbability, int numberOfInputs) {
-		return (int)(Math.ceil(-(numberOfInputs * Math.log(falsePositiveProbability)) / (2 * (Math.log(2)))));
+		return (int) Math.ceil(
+						-(numberOfInputs * Math.log(falsePositiveProbability))
+						/
+						(Math.pow(Math.log(2), 2))
+		);
 	}
 
 	private static void generateConfiguration (Configuration configuration,
