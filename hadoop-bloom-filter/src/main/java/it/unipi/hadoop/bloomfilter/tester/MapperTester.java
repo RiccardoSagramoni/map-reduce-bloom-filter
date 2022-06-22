@@ -1,6 +1,5 @@
 package it.unipi.hadoop.bloomfilter.tester;
 
-import it.unipi.hadoop.bloomfilter.builder.BloomFilterMapper;
 import it.unipi.hadoop.bloomfilter.builder.BloomFilterUtils;
 import it.unipi.hadoop.bloomfilter.writables.GenericObject;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
@@ -19,7 +18,7 @@ import java.util.StringTokenizer;
 
 public class MapperTester extends Mapper<LongWritable, Text, ByteWritable, GenericObject> {
     // Logger
-    private static final Logger LOGGER = LogManager.getLogger(BloomFilterMapper.class);
+    private static final Logger LOGGER = LogManager.getLogger(MapperTester.class);
 
     // Number of hash functions that must be applied
     private int HASH_FUNCTIONS_NUMBER;
@@ -69,7 +68,7 @@ public class MapperTester extends Mapper<LongWritable, Text, ByteWritable, Gener
         String movieId = itr.nextToken();
 
         if (!itr.hasMoreTokens()){
-            LOGGER.error("[MAPPER]: Input line has not enough tokens: " + value);
+            LOGGER.error("Input line has not enough tokens: " + value);
             return;
         }
         byte rating = (byte) Math.round(Double.parseDouble(itr.nextToken()));

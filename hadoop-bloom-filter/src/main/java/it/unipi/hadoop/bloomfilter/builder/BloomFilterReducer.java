@@ -37,7 +37,7 @@ public class BloomFilterReducer
 	@Override
 	public void setup (Context context) {
 		BLOOM_FILTER_SIZE = BloomFilterUtils.readConfigurationBloomFiltersSize(context.getConfiguration());
-		LOGGER.debug("Bloom filter size = " + BLOOM_FILTER_SIZE);
+		LOGGER.info("Bloom filter size = " + BLOOM_FILTER_SIZE);
 	}
 
 
@@ -46,7 +46,7 @@ public class BloomFilterReducer
 	public void reduce (ByteWritable key, Iterable<IntArrayWritable> values, Context context)
 			throws IOException, InterruptedException
 	{
-		LOGGER.debug("Reducer key = " + key);
+		LOGGER.info("Reducer key = " + key);
 
 
 		// Instantiate the temporary bloom filter, i.e. an array of BooleanWritable
@@ -54,7 +54,7 @@ public class BloomFilterReducer
 		for (int i = 0; i < bloomFilter.length; i++) {
 			bloomFilter[i] = new BooleanWritable(false);
 		}
-		LOGGER.debug("bloomFilter = " + Arrays.toString(bloomFilter));
+		LOGGER.info("bloomFilter = " + Arrays.toString(bloomFilter));
 
 
 
@@ -62,16 +62,16 @@ public class BloomFilterReducer
 		for (IntArrayWritable array : values) {
 			// Generate an iterable array
 			IntWritable[] arrayWithHashedIndexes = (IntWritable[]) array.toArray();
-			LOGGER.debug("IntWritable array = " + Arrays.toString(arrayWithHashedIndexes));
+			LOGGER.info("IntWritable array = " + Arrays.toString(arrayWithHashedIndexes));
 
 
 			// Iterate the list of BF indexes produced by mapper's hash functions
 			for (IntWritable i : arrayWithHashedIndexes) {
 				int indexToSet = i.get();
-				LOGGER.debug("indexToSet = " + indexToSet);
+				LOGGER.info("indexToSet = " + indexToSet);
 
 				// Check if index is a valid number
-				if (indexToSet < 0 || indexToSet >= BLOOM_FILTER_SIZE.get(key.get())) {
+				if (indexToSet < 0 || indexToSet >= bloomFilter.length) {
 					LOGGER.warn("Index " + indexToSet +
 							" for key " + key + " is not valid");
 					continue;
@@ -85,8 +85,8 @@ public class BloomFilterReducer
 
 		}
 
-		LOGGER.debug("Bloom filter length = " + bloomFilter.length);
-		LOGGER.debug("Bloom filter = " + Arrays.toString(bloomFilter));
+		LOGGER.info("Bloom filter length = " + bloomFilter.length);
+		LOGGER.info("Bloom filter = " + Arrays.toString(bloomFilter));
 
 		// Emit the reducer's results
 		SERIALIZABLE_BLOOM_FILTER.set(bloomFilter);
