@@ -30,7 +30,9 @@ public class BloomFilterTester {
 	 * @return
 	 */
 	private static int computeNumberOfHashFunctions (double falsePositiveProbability) {
-		return (int)(Math.ceil(-(Math.log(falsePositiveProbability)/(Math.log(2)))));
+		return (int)(Math.ceil(
+				-(Math.log(falsePositiveProbability) / (Math.log(2)))
+		));
 	}
 
 
@@ -41,7 +43,9 @@ public class BloomFilterTester {
 	 * @return
 	 */
 	private static int computeSizeOfBloomFilter (double falsePositiveProbability, int numberOfInputs) {
-		return (int)(Math.ceil(-(numberOfInputs * Math.log(falsePositiveProbability)) / (2 * (Math.log(2)))));
+		return (int)(Math.ceil(
+				-(numberOfInputs * Math.log(falsePositiveProbability)) / Math.pow(Math.log(2), 2)
+		));
 	}
 
 	private static void generateConfiguration (Configuration configuration,
@@ -127,7 +131,7 @@ public class BloomFilterTester {
 
 		// Configure output key/value for mappers
 		job.setMapOutputKeyClass(ByteWritable.class);
-		job.setMapOutputValueClass(GenericObject.class);	//GenericObject.class
+		job.setMapOutputValueClass(GenericObject.class);
 
 
 		// Configure reducer
@@ -206,13 +210,13 @@ public class BloomFilterTester {
 		Map<Byte, Integer> sizeOfBloomFilters =
 				getBloomFiltersSizeParameters(configuration, linecount_output, falsePositiveProbability);
 
-		boolean succeded = runBloomFilterTester(
+		boolean succeeded = runBloomFilterTester(
 				configuration,
 				falsePositiveProbability,
 				input_dataset, output_bloom_filter, output_tester,
 				sizeOfBloomFilters);
 
-		if (!succeded) {
+		if (!succeeded) {
 			System.err.println("BloomFilter Tester failed");
 			System.exit(1);
 		}

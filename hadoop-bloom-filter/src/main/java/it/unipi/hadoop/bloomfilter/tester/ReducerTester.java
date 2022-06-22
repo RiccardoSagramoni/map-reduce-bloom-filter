@@ -19,7 +19,7 @@ public class ReducerTester
 
 	private static final Logger LOGGER = LogManager.getLogger(ReducerTester.class);
 
-	private final DoubleWritable SERIALIZABLE_FALSE_POSITIVE = new DoubleWritable();
+	private final DoubleWritable SERIALIZABLE_FALSE_POSITIVE = new DoubleWritable(0);
 
 
 	@Override
@@ -38,6 +38,7 @@ public class ReducerTester
 				bloomFilter = (BooleanWritable[]) booleanArrayWritable.toArray();
 
 				LOGGER.info("bloomFilter = " + Arrays.toString(bloomFilter));
+				LOGGER.info("bloomFilter: " + bloomFilter.length);
 				break;
 			}
 		}
@@ -53,6 +54,7 @@ public class ReducerTester
 
 		// Get the intermediate results from the mapper
 		for (GenericObject object : values) {
+			//LOGGER.info("GenericObject for: " + object.get());
 			// Skip the bloom filter
 			if (object.get() instanceof BooleanArrayWritable) {
 				continue;
@@ -60,6 +62,7 @@ public class ReducerTester
 
 			// Convert to array of IntWritable (the outputs of the hash functions)
 			IntWritable[] intArray = (IntWritable[]) ( (IntArrayWritable)object.get() ).toArray();
+			LOGGER.info("intArray: " + Arrays.toString(intArray));
 
 			boolean isFalsePositive = true;
 
@@ -96,7 +99,8 @@ public class ReducerTester
 			LOGGER.info("#falsePositive = " + numberOfFalsePositives);
 		}
 
-		SERIALIZABLE_FALSE_POSITIVE.set(numberOfFalsePositives / numberOfTests);
+		if (numberOfTests != 0)
+			SERIALIZABLE_FALSE_POSITIVE.set(numberOfFalsePositives / numberOfTests);
 		context.write(key, SERIALIZABLE_FALSE_POSITIVE);
 		LOGGER.info("#tests = " + numberOfTests);
 		LOGGER.info("#falsePositive = " + SERIALIZABLE_FALSE_POSITIVE.get());

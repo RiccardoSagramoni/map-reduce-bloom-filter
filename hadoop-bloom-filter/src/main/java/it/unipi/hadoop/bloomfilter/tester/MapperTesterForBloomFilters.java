@@ -23,7 +23,7 @@ public class MapperTesterForBloomFilters
     {
         object.set(value);
         context.write(key, object);
-        LOGGER.info("Map bloom filter " + value + " for key " + key);
+        // LOGGER.info("Map bloom filter " + object.get() + " for key " + key);
     }
 
 }

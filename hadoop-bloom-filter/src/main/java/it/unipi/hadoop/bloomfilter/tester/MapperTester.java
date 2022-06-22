@@ -42,6 +42,7 @@ public class MapperTester extends Mapper<LongWritable, Text, ByteWritable, Gener
 
         // Read size of the bloom filters
         BLOOM_FILTER_SIZE = BloomFilterUtils.readConfigurationBloomFiltersSize(configuration);
+        LOGGER.info("BLOOM_FILTER_SIZE: " + BLOOM_FILTER_SIZE.toString());
 
         // Read how many hash functions must be implemented
         HASH_FUNCTIONS_NUMBER = context.getConfiguration().getInt(
@@ -81,14 +82,15 @@ public class MapperTester extends Mapper<LongWritable, Text, ByteWritable, Gener
         for (int i = 0; i < HASH_FUNCTIONS_NUMBER; i++){
             int hashValue = hash.hash(movieId.getBytes(StandardCharsets.UTF_8), i);
 
+            LOGGER.info("bf_size_single: " + Integer.valueOf(BLOOM_FILTER_SIZE.get(rating)));
             hashes[i] = new IntWritable(
-                    Math.abs(hashValue % BLOOM_FILTER_SIZE.get(rating))
+                    Math.abs(hashValue % Integer.valueOf(BLOOM_FILTER_SIZE.get(rating)))
             );
 
-            LOGGER.debug("Computed hash n." + i + ": " + hashes[i]);
+            LOGGER.info("Computed hash n." + i + ": " + hashes[i]);
         }
 
-        LOGGER.debug("WRITE (key, value) = ( " + rating + ",  " + Arrays.toString(hashes) + " )");
+        LOGGER.info("WRITE (key, value) = ( " + rating + ",  " + Arrays.toString(hashes) + " )");
 
         // Setting the output values
         outputKey.set(rating);
