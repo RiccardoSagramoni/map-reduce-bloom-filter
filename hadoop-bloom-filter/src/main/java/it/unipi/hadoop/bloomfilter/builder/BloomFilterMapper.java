@@ -91,10 +91,10 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 					Math.abs(hashValue % bloomFilterSize)
 			);
 
-			LOGGER.info("Computed hash n." + i + ": " + hashes[i]);
+			LOGGER.debug("Computed hash n." + i + ": " + hashes[i]);
 		}
 
-		LOGGER.info("WRITE (key, value) = ( " + rating + ",  " + Arrays.toString(hashes) + " )");
+		LOGGER.debug("WRITE (key, value) = ( " + rating + ",  " + Arrays.toString(hashes) + " )");
 
 		// Setting the output values
 		outputKey.set(rating);

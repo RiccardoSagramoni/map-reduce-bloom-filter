@@ -37,8 +37,8 @@ public class ReducerTester
 				BooleanArrayWritable booleanArrayWritable = (BooleanArrayWritable) object.get();
 				bloomFilter = (BooleanWritable[]) booleanArrayWritable.toArray();
 
-				LOGGER.info("bloomFilter = " + Arrays.toString(bloomFilter));
-				LOGGER.info("bloomFilter: " + bloomFilter.length);
+				LOGGER.debug("bloomFilter = " + Arrays.toString(bloomFilter));
+				LOGGER.debug("bloomFilter length = " + bloomFilter.length);
 				break;
 			}
 		}
@@ -54,7 +54,6 @@ public class ReducerTester
 
 		// Get the intermediate results from the mapper
 		for (GenericObject object : values) {
-			//LOGGER.info("GenericObject for: " + object.get());
 			// Skip the bloom filter
 			if (object.get() instanceof BooleanArrayWritable) {
 				continue;
@@ -62,7 +61,7 @@ public class ReducerTester
 
 			// Convert to array of IntWritable (the outputs of the hash functions)
 			IntWritable[] intArray = (IntWritable[]) ( (IntArrayWritable)object.get() ).toArray();
-			LOGGER.info("intArray: " + Arrays.toString(intArray));
+			LOGGER.debug("intArray: " + Arrays.toString(intArray));
 
 			boolean isFalsePositive = true;
 
@@ -70,7 +69,7 @@ public class ReducerTester
 			// (i.e. the position to hit in the bloom filter)
 			for (IntWritable i : intArray) {
 				int index = i.get();
-				LOGGER.info("Index=" + index + " key=" + key +
+				LOGGER.debug("Index=" + index + " key=" + key +
 						" BF_size=" + bloomFilter.length);
 
 				if (index < 0 || index >= bloomFilter.length) {
@@ -92,19 +91,18 @@ public class ReducerTester
 			numberOfTests++;
 			if (isFalsePositive) {
 				numberOfFalsePositives++;
-				LOGGER.info("#falsePositive = " + numberOfFalsePositives);
 			}
 
-			LOGGER.info("#tests = " + numberOfTests);
-			LOGGER.info("#falsePositive = " + numberOfFalsePositives);
+			LOGGER.debug("#tests_0 = " + numberOfTests);
+			LOGGER.debug("#falsePositive_0 = " + numberOfFalsePositives);
 		}
 
 		if (numberOfTests != 0)
 			SERIALIZABLE_FALSE_POSITIVE.set(numberOfFalsePositives / numberOfTests);
 		context.write(key, SERIALIZABLE_FALSE_POSITIVE);
 		LOGGER.info("#tests = " + numberOfTests);
-		LOGGER.info("#falsePositive = " + SERIALIZABLE_FALSE_POSITIVE.get());
-		LOGGER.info("false positive probability = " + SERIALIZABLE_FALSE_POSITIVE);
+		LOGGER.info("#falsePositive = " + numberOfFalsePositives);
+		LOGGER.info("key: " + key + ", false positive probability = " + SERIALIZABLE_FALSE_POSITIVE);
 	}
 
 }

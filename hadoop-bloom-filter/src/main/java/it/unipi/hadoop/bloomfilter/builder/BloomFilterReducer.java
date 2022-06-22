@@ -54,7 +54,7 @@ public class BloomFilterReducer
 		for (int i = 0; i < bloomFilter.length; i++) {
 			bloomFilter[i] = new BooleanWritable(false);
 		}
-		LOGGER.info("bloomFilter = " + Arrays.toString(bloomFilter));
+		//LOGGER.debug("bloomFilter = " + Arrays.toString(bloomFilter));
 
 
 
@@ -68,7 +68,7 @@ public class BloomFilterReducer
 			// Iterate the list of BF indexes produced by mapper's hash functions
 			for (IntWritable i : arrayWithHashedIndexes) {
 				int indexToSet = i.get();
-				LOGGER.info("indexToSet = " + indexToSet);
+				LOGGER.debug("indexToSet = " + indexToSet);
 
 				// Check if index is a valid number
 				if (indexToSet < 0 || indexToSet >= bloomFilter.length) {
@@ -85,8 +85,8 @@ public class BloomFilterReducer
 
 		}
 
-		LOGGER.info("Bloom filter length = " + bloomFilter.length);
-		LOGGER.info("Bloom filter = " + Arrays.toString(bloomFilter));
+		LOGGER.debug("Bloom filter length = " + bloomFilter.length);
+		//LOGGER.debug("Bloom filter = " + Arrays.toString(bloomFilter));
 
 		// Emit the reducer's results
 		SERIALIZABLE_BLOOM_FILTER.set(bloomFilter);
