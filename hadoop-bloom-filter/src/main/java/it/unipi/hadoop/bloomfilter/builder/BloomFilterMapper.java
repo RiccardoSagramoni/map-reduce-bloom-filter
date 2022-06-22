@@ -64,12 +64,20 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 			return;
 		}
 		String movieId = itr.nextToken();
+		LOGGER.debug("movieId = " + movieId);
 
 		if (!itr.hasMoreTokens()){
 			LOGGER.error("Input line has not enough tokens: " + value);
 			return;
 		}
 		byte rating = (byte) Math.round(Double.parseDouble(itr.nextToken()));
+		LOGGER.debug("Rating = " + rating);
+
+		Integer bloomFilterSize = BLOOM_FILTER_SIZE.get(rating);
+		if (bloomFilterSize == null) {
+			LOGGER.error("Rating key " + rating + " doesn't exist in linecount");
+			return;
+		}
 
 
 		// Local array of IntWritable to contain the hashes of the movie's id
@@ -80,7 +88,7 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 			int hashValue = hash.hash(movieId.getBytes(StandardCharsets.UTF_8), i);
 
 			hashes[i] = new IntWritable(
-					Math.abs(hashValue % BLOOM_FILTER_SIZE.get(rating))
+					Math.abs(hashValue % bloomFilterSize)
 			);
 
 			LOGGER.debug("Computed hash n." + i + ": " + hashes[i]);
