@@ -19,27 +19,14 @@ public class ReducerTester
 
 	private static final Logger LOGGER = LogManager.getLogger(ReducerTester.class);
 
-	// Size of the bloom filter to be read from the configuration
-	//private int BLOOM_FILTER_SIZE;
-
-	// size of each BloomFilter
-	private Map<Byte, Integer> BLOOM_FILTER_SIZE;
-
 	private final DoubleWritable SERIALIZABLE_FALSE_POSITIVE = new DoubleWritable();
 
-
-	@Override
-	public void setup(Context context) {
-		//BLOOM_FILTER_SIZE = context.getConfiguration().getInt("bloom.filter.size", 0);
-		BLOOM_FILTER_SIZE = BloomFilterUtils.readConfigurationBloomFiltersSize(context.getConfiguration());
-		LOGGER.info("BloomFilter size: " + BLOOM_FILTER_SIZE);
-	}
 
 	@Override
 	public void reduce (ByteWritable key, Iterable<GenericObject> values, Context context)
 			throws IOException, InterruptedException {
 
-		LOGGER.info("[TESTER] ReducerKey: " + key);
+		LOGGER.info("Reducer key = " + key);
 
 		// Declare the bloomFilter
 		BooleanWritable[] bloomFilter = null;
@@ -49,15 +36,15 @@ public class ReducerTester
 			if (object.get() instanceof BooleanArrayWritable) {
 				BooleanArrayWritable booleanArrayWritable = (BooleanArrayWritable) object.get();
 				bloomFilter = (BooleanWritable[]) booleanArrayWritable.toArray();
-				LOGGER.info("[TESTER] bloomFilter = " + Arrays.toString(bloomFilter));
+
+				LOGGER.info("bloomFilter = " + Arrays.toString(bloomFilter));
 				break;
 			}
 		}
 
 		// Check if bloom filter was founded
 		if (bloomFilter == null) {
-			LOGGER.info("[REDUCER-TEST]: BloomFilter " + key + " doesn't exist");
-			//System.err.println("[TEST-REDUCER]: Bloom filter " + key + "doesn't exist");
+			LOGGER.error("BloomFilter " + key + " doesn't exist");
 			return;
 		}
 
@@ -80,14 +67,12 @@ public class ReducerTester
 			// (i.e. the position to hit in the bloom filter)
 			for (IntWritable i : intArray) {
 				int index = i.get();
-				LOGGER.info("[REDUCER-TEST] index: " + index + " key: " + key +
-						" BF_size: " + BLOOM_FILTER_SIZE.get(key.get()));
+				LOGGER.info("Index=" + index + " key=" + key +
+						" BF_size=" + bloomFilter.length);
 
-				if (index < 0 || index >= BLOOM_FILTER_SIZE.get(key.get())) {
-					LOGGER.warn("[Reducer-Test]: index " + index + " for key " + key +
+				if (index < 0 || index >= bloomFilter.length) {
+					LOGGER.error("Index " + index + " for key " + key +
 							" not valid - out of bound");
-					/*System.err.println("[TEST-REDUCER]: Index " + index +
-							" out of bound for bloom filter " + key.get());*/
 					return;
 				}
 
@@ -104,15 +89,18 @@ public class ReducerTester
 			numberOfTests++;
 			if (isFalsePositive) {
 				numberOfFalsePositives++;
+				LOGGER.info("#falsePositive = " + numberOfFalsePositives);
 			}
 
-			LOGGER.info("#tests: " + numberOfTests);
-			LOGGER.info("#falsePositive: " + numberOfFalsePositives);
+			LOGGER.info("#tests = " + numberOfTests);
+			LOGGER.info("#falsePositive = " + numberOfFalsePositives);
 		}
 
 		SERIALIZABLE_FALSE_POSITIVE.set(numberOfFalsePositives / numberOfTests);
 		context.write(key, SERIALIZABLE_FALSE_POSITIVE);
-		LOGGER.info("%falsePositive: " + SERIALIZABLE_FALSE_POSITIVE.get());
+		LOGGER.info("#tests = " + numberOfTests);
+		LOGGER.info("#falsePositive = " + SERIALIZABLE_FALSE_POSITIVE.get());
+		LOGGER.info("false positive probability = " + SERIALIZABLE_FALSE_POSITIVE);
 	}
 
 }

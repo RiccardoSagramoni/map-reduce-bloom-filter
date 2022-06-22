@@ -66,7 +66,7 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 		String movieId = itr.nextToken();
 
 		if (!itr.hasMoreTokens()){
-			LOGGER.error("[MAPPER]: Input line has not enough tokens: " + value);
+			LOGGER.error("Input line has not enough tokens: " + value);
 			return;
 		}
 		byte rating = (byte) Math.round(Double.parseDouble(itr.nextToken()));
