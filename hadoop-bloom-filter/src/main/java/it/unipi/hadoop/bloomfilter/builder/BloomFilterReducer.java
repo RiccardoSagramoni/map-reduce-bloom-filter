@@ -71,7 +71,7 @@ public class BloomFilterReducer
 				LOGGER.debug("indexToSet = " + indexToSet);
 
 				// Check if index is a valid number
-				if (indexToSet < 0 || indexToSet >= BLOOM_FILTER_SIZE.get(key.get())) {
+				if (indexToSet < 0 || indexToSet >= bloomFilter.length) {
 					LOGGER.warn("Index " + indexToSet +
 							" for key " + key + " is not valid");
 					continue;
