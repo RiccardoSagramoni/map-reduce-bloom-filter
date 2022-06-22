@@ -27,7 +27,11 @@ public class BloomFilter {
 	 * @return
 	 */
 	private static int computeNumberOfHashFunctions (double falsePositiveProbability) {
-		return (int)(Math.ceil(-(Math.log(falsePositiveProbability)/(Math.log(2)))));
+		return (int) Math.ceil(
+						- Math.log(falsePositiveProbability)
+						/
+						Math.log(2)
+		);
 	}
 
 
@@ -39,9 +43,9 @@ public class BloomFilter {
 	 */
 	private static int computeSizeOfBloomFilter (double falsePositiveProbability, int numberOfInputs) {
 		return (int) Math.ceil(
-						-(numberOfInputs * Math.log(falsePositiveProbability))
+						- ( numberOfInputs * Math.log(falsePositiveProbability) )
 						/
-						(Math.pow(Math.log(2), 2))
+						Math.pow(Math.log(2), 2)
 		);
 	}
 
