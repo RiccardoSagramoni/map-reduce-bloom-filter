@@ -15,9 +15,9 @@ import java.util.Map;
 /**
  * Reducer of the mapreduce application that builds a bloom filter.
  * <ul>
- * <li>Input key: average rating (IntWritable)</li>
+ * <li>Input key: average rating (ByteWritable)</li>
  * <li>Input value: array of position to set to 1 in the bloom filter (IntArrayWritable)</li>
- * <li>Output key: average rating (IntWritable)</li>
+ * <li>Output key: average rating (ByteWritable)</li>
  * <li>Output value: bloom filter structure (BooleanArrayWritable)</li>
  * </ul>
  */

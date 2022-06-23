@@ -15,6 +15,15 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+/**
+ * Mapper of the mapreduce application that builds a bloom filter.
+ * <ul>
+ * <li>Input key: id of the line extracted from the input text file (LongWritable)</li>
+ * <li>Input value: text of the line (Text)</li>
+ * <li>Output key: rating value of the record (ByteWritable)</li>
+ * <li>Output value: array with the hash values of the line (IntArrayWritable)</li>
+ * </ul>
+ */
 public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, IntArrayWritable> {
 	// Logger
 	private static final Logger LOGGER = LogManager.getLogger(BloomFilterMapper.class);

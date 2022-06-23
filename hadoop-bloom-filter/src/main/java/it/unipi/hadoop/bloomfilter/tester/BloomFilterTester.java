@@ -1,5 +1,6 @@
 package it.unipi.hadoop.bloomfilter.tester;
 
+import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
 import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -13,106 +14,65 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Launch the MapReduce job for generating the bloom filters
+ * from a given dataset.<br><br>
+ * Use the following command to launch the application: <br>
+ * <code>
+ *     hadoop jar <i>application.jar</i> it.unipi.hadoop.bloomfilter.tester.BloomFilterTester
+ *     	<i>&#60;false_positive_probability&#62;</i> <i>test_dataset_path</i>
+ *     	<i>bloom_filters_path</i>
+ *     	<i>output_path</i>
+ *     	<i>linecount_output_path</i>
+ * </code>
+ * <br><br>
+ * The <i>bloom_filters_path</i> is the output of the builder job.<br>
+ * The <i>linecount_output_path</i> is the output of the MapReduce job which counts the
+ * number of keys for each bloom filter for the <b>TRAINING</b> partition of the dataset.
+ */
 public class BloomFilterTester {
 
 	private static final int NUMBER_OF_REDUCERS = 4;
 	private static final int LINES_PER_MAP = 10000;
 
 	/**
-	 * TODO
-	 * @param falsePositiveProbability
-	 * @return
-	 */
-	private static int computeNumberOfHashFunctions (double falsePositiveProbability) {
-		return (int)(Math.ceil(
-				-(Math.log(falsePositiveProbability) / (Math.log(2)))
-		));
-	}
-
-
-	/**
-	 * TODO
-	 * @param falsePositiveProbability
-	 * @param numberOfInputs
-	 * @return
-	 */
-	private static int computeSizeOfBloomFilter (double falsePositiveProbability, int numberOfInputs) {
-		return (int)(Math.ceil(
-				-(numberOfInputs * Math.log(falsePositiveProbability)) / Math.pow(Math.log(2), 2)
-		));
-	}
-
-	private static void generateConfiguration (Configuration configuration,
-											   double falsePositiveProbability,
-											   Map<Byte, Integer> sizeOfBloomFilters)
-	{
-		// Set bloomFilter parameters
-		configuration.setInt(
-				"bloom.filter.number", // how many bloom filter must be created
-				sizeOfBloomFilters.size()
-		);
-
-		int i = 0;
-		for (Map.Entry<Byte, Integer> entry : sizeOfBloomFilters.entrySet()) {
-			configuration.setInt(
-					"bloom.filter.size.key." + i, // rating key of the k-th bloom filter
-					entry.getKey()
-			);
-			configuration.setInt(
-					"bloom.filter.size.value." + i, // size of k-th bloom filter
-					entry.getValue()
-			);
-			i++;
-		}
-
-		configuration.setInt(
-				"bloom.filter.hash", // how many hash functions for each bloom filter
-				computeNumberOfHashFunctions(falsePositiveProbability)
-		);
-
-		System.out.println("Number of hash functions: " + computeNumberOfHashFunctions(falsePositiveProbability));
-		System.out.println("Rating -> bloom filter size: " + sizeOfBloomFilters);
-	}
-
-
-	/**
-	 * TODO
-	 * @param configuration
-	 * @param falsePositiveProbability
-	 * @param input_dataset
-	 * @param output_bloom_filter
-	 * @param output_tester
-	 * @return
-	 * @throws IOException
-	 * @throws ClassNotFoundException
-	 * @throws InterruptedException
+	 * Run the MapReduce job for testing the bloom filters
+	 * @param configuration job configuration
+	 * @param falsePositiveProbability desired false positive probability
+	 * @param inputDatasetPath path to the input dataset
+	 * @param bloomFiltersPath path to the file with the bloom filter (i.e. the output of the builder)
+	 * @param outputTesterPath path to the output location
+	 * @param sizeOfBloomFilters map with the size of the corresponding bloom filter for each rating value
+	 * @return true on success, false on failure
 	 */
 	private static boolean runBloomFilterTester (Configuration configuration,
-												  double falsePositiveProbability,
-												  Path input_dataset,
-												  Path output_bloom_filter,
-												  Path output_tester,
-												  Map<Byte, Integer> sizeOfBloomFilters)
+	                                             double falsePositiveProbability,
+	                                             Path inputDatasetPath,
+												 Path bloomFiltersPath,
+												 Path outputTesterPath,
+												 Map<Byte, Integer> sizeOfBloomFilters)
 			throws IOException, ClassNotFoundException, InterruptedException
 	{
 
 		// Create MapReduce job
 		Job job = Job.getInstance(configuration, "BloomFilter Tester");
-		generateConfiguration(job.getConfiguration(), falsePositiveProbability, sizeOfBloomFilters);
+		BloomFilterUtils.generateConfiguration(
+				job.getConfiguration(),
+				falsePositiveProbability,
+				sizeOfBloomFilters
+		);
 
+		// Set JAR
 		job.setJarByClass(BloomFilterTester.class);
 
 
 		// Configure mapper which distributes the dataset
 		MultipleInputs.addInputPath(
 				job,
-				input_dataset,
+				inputDatasetPath,
 				NLineInputFormat.class,
 				MapperTesterForHashValues.class // Reuse mapper for building bloom filter
 		);
@@ -123,8 +83,7 @@ public class BloomFilterTester {
 		// Configure mapper which distributes the bloom filters
 		MultipleInputs.addInputPath(
 				job,
-				output_bloom_filter,
-				// TODO multiple files??? (probably not: mapreduce automatically handles the partition)
+				bloomFiltersPath,
 				SequenceFileInputFormat.class,
 				MapperTesterForBloomFilters.class
 		);
@@ -143,51 +102,12 @@ public class BloomFilterTester {
 
 		// Configure output path
 		job.setOutputFormatClass(TextOutputFormat.class);
-		TextOutputFormat.setOutputPath(job, output_tester);
+		TextOutputFormat.setOutputPath(job, outputTesterPath);
 
 		return job.waitForCompletion(true);
 	}
 
 
-	/**
-	 * TODO
-	 * @param file
-	 * @param falsePositiveProbability
-	 * @throws IOException
-	 */
-	private static Map<Byte, Integer> getBloomFiltersSizeParameters (Configuration conf, Path file,
-																	 Double falsePositiveProbability)
-			throws IOException
-	{
-		// Map each rating to the size its corresponding bloom filter
-		Map<Byte, Integer> sizeOfBloomFilters = new HashMap<>();
-
-		// Open file in HDFS
-		try (BufferedReader br = new BufferedReader(
-				new InputStreamReader(
-						file.getFileSystem(conf).open(file)
-				)
-		)
-		){
-			String line;
-
-			// Read each record of the dataset
-			while ((line = br.readLine()) != null) {
-				// Split the record
-				String[] splits = line.split("\\s+");
-
-				// Parse the record and put it in the map
-				sizeOfBloomFilters.put(
-						Byte.parseByte(splits[0]),
-						computeSizeOfBloomFilter(falsePositiveProbability, Integer.parseInt(splits[1]))
-				);
-			}
-
-		}
-
-		System.out.println("Bloom filter input data = " + sizeOfBloomFilters);
-		return sizeOfBloomFilters;
-	}
 
 	public static void main (String[] args) 
 				throws IOException, InterruptedException, ClassNotFoundException
@@ -206,16 +126,21 @@ public class BloomFilterTester {
 		Path output_tester = new Path(otherArgs[3]);
 		Path linecount_output = new Path(otherArgs[4]);
 
-		// Read file
+		// Compute the size of bloom filters
 		Map<Byte, Integer> sizeOfBloomFilters =
-				getBloomFiltersSizeParameters(configuration, linecount_output, falsePositiveProbability);
+				BloomFilterUtils.getBloomFiltersSizeParameters(
+						configuration,
+						linecount_output,
+						falsePositiveProbability
+				);
 
+		// Launch the MapReduce job
 		boolean succeeded = runBloomFilterTester(
 				configuration,
 				falsePositiveProbability,
 				input_dataset, output_bloom_filter, output_tester,
-				sizeOfBloomFilters);
-
+				sizeOfBloomFilters
+		);
 		if (!succeeded) {
 			System.err.println("BloomFilter Tester failed");
 			System.exit(1);
