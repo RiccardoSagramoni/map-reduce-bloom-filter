@@ -1,5 +1,6 @@
 package it.unipi.hadoop.bloomfilter.tester;
 
+import it.unipi.hadoop.bloomfilter.util.BloomFilterConfigurationName;
 import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
 import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
@@ -54,11 +55,11 @@ public class MapperTesterForHashValues extends Mapper<LongWritable, Text, ByteWr
 
 		// Read size of the bloom filters
 		BLOOM_FILTER_SIZE = BloomFilterUtils.readConfigurationBloomFiltersSize(configuration);
-		LOGGER.debug("BLOOM_FILTER_SIZE: " + BLOOM_FILTER_SIZE);
+		LOGGER.debug("BLOOM_FILTER_SIZE = " + BLOOM_FILTER_SIZE);
 
 		// Read how many hash functions must be implemented
 		HASH_FUNCTIONS_NUMBER = context.getConfiguration().getInt(
-				"bloom.filter.hash",
+				BloomFilterConfigurationName.NUMBER_HASH.toString(),
 				-1
 		);
 		LOGGER.debug("Number of hash functions = " + HASH_FUNCTIONS_NUMBER);

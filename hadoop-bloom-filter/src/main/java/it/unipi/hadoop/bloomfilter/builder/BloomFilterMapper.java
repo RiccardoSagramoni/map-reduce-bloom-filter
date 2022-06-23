@@ -1,5 +1,6 @@
 package it.unipi.hadoop.bloomfilter.builder;
 
+import it.unipi.hadoop.bloomfilter.util.BloomFilterConfigurationName;
 import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
 import org.apache.hadoop.conf.Configuration;
@@ -53,7 +54,7 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 
 		// Read how many hash functions must be implemented
 		HASH_FUNCTIONS_NUMBER = context.getConfiguration().getInt(
-				"bloom.filter.hash",
+				BloomFilterConfigurationName.NUMBER_HASH.toString(),
 				-1
 		);
 		LOGGER.debug("Number of hash functions = " + HASH_FUNCTIONS_NUMBER);

@@ -29,25 +29,25 @@ public class BloomFilterUtils {
 	{
 		// Set bloomFilter parameters
 		configuration.setInt(
-				"bloom.filter.number", // how many bloom filter must be created
+				BloomFilterConfigurationName.NUMBER.toString(),	// how many bloom filter must be created
 				sizeOfBloomFilters.size()
 		);
 
 		int i = 0;
 		for (Map.Entry<Byte, Integer> entry : sizeOfBloomFilters.entrySet()) {
 			configuration.setInt(
-					"bloom.filter.size.key." + i, // rating key of the k-th bloom filter
+					BloomFilterConfigurationName.RATING_KEY.toString() + i, // rating key of the k-th bloom filter
 					entry.getKey()
 			);
 			configuration.setInt(
-					"bloom.filter.size.value." + i, // size of k-th bloom filter
+					BloomFilterConfigurationName.SIZE_VALUE.toString() + i, // size of k-th bloom filter
 					entry.getValue()
 			);
 			i++;
 		}
 
 		configuration.setInt(
-				"bloom.filter.hash", // how many hash functions for each bloom filter
+				BloomFilterConfigurationName.NUMBER_HASH.toString(),	// how many hash functions for each bloom filter
 				computeNumberOfHashFunctions(falsePositiveProbability)
 		);
 
@@ -59,7 +59,7 @@ public class BloomFilterUtils {
 
 	/**
 	 * TODO
-	 * @param configuration
+	 * @param configuration configuration of MapReduce job
 	 * @return map with the size of the corresponding bloom filter for each rating value
 	 */
 	public static Map<Byte, Integer> readConfigurationBloomFiltersSize (Configuration configuration) {
@@ -67,28 +67,30 @@ public class BloomFilterUtils {
 		Map<Byte, Integer> map = new HashMap<>();
 
 		// Read how many bloom filters will be created
-		int howManyBloomFilters = configuration.getInt("bloom.filter.number", -1);
+		int howManyBloomFilters = configuration.getInt(BloomFilterConfigurationName.NUMBER.toString(), -1);
 		if (howManyBloomFilters <= 0) {
-			LOGGER.error("bloom.filter.number parameter not set");
-			throw new RuntimeException("bloom.filter.number parameter not set");
+			LOGGER.error(BloomFilterConfigurationName.NUMBER +
+					" parameter not set");
+			throw new RuntimeException(BloomFilterConfigurationName.NUMBER +
+					" parameter not set");
 		}
 
 		// For each bloom filter, extract the related key and the size of the bloom filter.
 		// Build a hash map with the configuration parameters.
 		for (int i = 0; i < howManyBloomFilters; i++) {
 			byte key = (byte) configuration.getInt(
-					"bloom.filter.size.key." + i,
+					BloomFilterConfigurationName.RATING_KEY.toString() + i,
 					-1
 			);
 			int size = configuration.getInt(
-					"bloom.filter.size.value." + i,
+					BloomFilterConfigurationName.SIZE_VALUE.toString() + i,
 					-1
 			);
 
 			if (key < 0 || size <= 0) {
 				LOGGER.warn("Configuration isn't valid: " +
-						"bloom.filter.size.key." + i + " = " + key + ", " +
-						"bloom.filter.size.value." + i
+						BloomFilterConfigurationName.RATING_KEY + i + " = " + key + ", " +
+						BloomFilterConfigurationName.SIZE_VALUE + i
 				);
 				continue;
 			}

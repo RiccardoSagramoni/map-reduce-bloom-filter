@@ -3,6 +3,7 @@ package it.unipi.hadoop.bloomfilter.builder;
 import java.io.IOException;
 import java.util.Map;
 
+import it.unipi.hadoop.bloomfilter.util.BloomFilterConfigurationName;
 import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
 import it.unipi.hadoop.bloomfilter.util.MapReduceParameters;
 import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
@@ -66,7 +67,7 @@ public class BloomFilter {
 		job.setInputFormatClass(NLineInputFormat.class);
 		NLineInputFormat.setInputPaths(job, inputPath);
 		job.getConfiguration().setInt(
-				"mapreduce.input.lineinputformat.linespermap",
+				BloomFilterConfigurationName.LINES_PER_MAP.toString(),
 				MapReduceParameters.getInstance().getLinesPerMapBuilder()
 		);
 
