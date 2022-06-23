@@ -1,6 +1,7 @@
 package it.unipi.hadoop.bloomfilter.tester;
 
 import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
+import it.unipi.hadoop.bloomfilter.util.MapReduceParameters;
 import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -34,9 +35,6 @@ import java.util.Map;
  * number of keys for each bloom filter for the <b>TRAINING</b> partition of the dataset.
  */
 public class BloomFilterTester {
-
-	private static final int NUMBER_OF_REDUCERS = 4;
-	private static final int LINES_PER_MAP = 10000;
 
 	/**
 	 * Run the MapReduce job for testing the bloom filters
@@ -78,7 +76,8 @@ public class BloomFilterTester {
 		);
 		job.getConfiguration().setInt(
 				"mapreduce.input.lineinputformat.linespermap",
-				LINES_PER_MAP);
+				MapReduceParameters.getInstance().getLinesPerMapTester()
+		);
 
 		// Configure mapper which distributes the bloom filters
 		MultipleInputs.addInputPath(
@@ -97,7 +96,7 @@ public class BloomFilterTester {
 		job.setReducerClass(ReducerTester.class);
 		job.setOutputKeyClass(IntWritable.class);
 		job.setOutputValueClass(DoubleWritable.class);
-		job.setNumReduceTasks(NUMBER_OF_REDUCERS);
+		job.setNumReduceTasks(MapReduceParameters.getInstance().getNumberOfReducersTester());
 
 
 		// Configure output path

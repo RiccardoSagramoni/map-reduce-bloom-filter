@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
+import it.unipi.hadoop.bloomfilter.util.MapReduceParameters;
 import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
 import org.apache.hadoop.io.*;
@@ -25,11 +26,6 @@ import org.apache.hadoop.util.GenericOptionsParser;
  * </code>
  */
 public class BloomFilter {
-
-	// Parameters for the MapReduce job
-	private static final int NUMBER_OF_REDUCERS = 4;
-	private static final int LINES_PER_MAP = 10000;
-
 
 	/**
 	 * Run the MapReduce job for building the bloom filters
@@ -64,14 +60,14 @@ public class BloomFilter {
 		job.setReducerClass(BloomFilterReducer.class);
 		job.setOutputKeyClass(ByteWritable.class);
 		job.setOutputValueClass(BooleanArrayWritable.class);
-		job.setNumReduceTasks(NUMBER_OF_REDUCERS);
+		job.setNumReduceTasks(MapReduceParameters.getInstance().getNumberOfReducersBuilder());
 
 		// Input configuration
 		job.setInputFormatClass(NLineInputFormat.class);
 		NLineInputFormat.setInputPaths(job, inputPath);
 		job.getConfiguration().setInt(
 				"mapreduce.input.lineinputformat.linespermap",
-				LINES_PER_MAP
+				MapReduceParameters.getInstance().getLinesPerMapBuilder()
 		);
 
 		// Output configuration
@@ -102,7 +98,11 @@ public class BloomFilter {
 
 		// Compute the size of bloom filters
 		Map<Byte, Integer> sizeOfBloomFilters =
-				BloomFilterUtils.getBloomFiltersSizeParameters(configuration, linecount_file, falsePositiveProbability);
+				BloomFilterUtils.getBloomFiltersSizeParameters(
+						configuration,
+						linecount_file,
+						falsePositiveProbability
+				);
 
 		// Launch the MapReduce job
 		boolean succeededJob = runBloomFilterBuilder(
