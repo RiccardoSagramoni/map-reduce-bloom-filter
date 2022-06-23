@@ -11,12 +11,27 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.util.Arrays;
 
+/**
+ * Reducer of the mapreduce tester application that computes the false probability
+ * of a bloom filter, given in input.
+ * <ul>
+ * <li>Input key: average rating (ByteWritable)</li>
+ * <li>Input value: output of two mappers (TesterGenericWritable):
+ * <ul>
+ *     <li>Bloom filter structure, from the builder (BooleanArrayWritable)</li>
+ *     <li>Array of position to check if set to 1 in the given bloom filter (IntArrayWritable)</li>
+ * </ul></li>
+ * <li>Output key: average rating (ByteWritable)</li>
+ * <li>Output value: false positive probability (DoubleWritable)</li>
+ * </ul>
+ */
 public class ReducerTester
 		extends Reducer<ByteWritable, TesterGenericWritable, ByteWritable, DoubleWritable>
 {
 	// Logger
 	private static final Logger LOGGER = LogManager.getLogger(ReducerTester.class);
 
+	// Value of the false positive probability
 	private final DoubleWritable SERIALIZABLE_FALSE_POSITIVE = new DoubleWritable();
 
 
@@ -59,7 +74,7 @@ public class ReducerTester
 
 			// Convert to array of IntWritable (the outputs of the hash functions)
 			IntWritable[] intArray = (IntWritable[]) ( (IntArrayWritable)object.get() ).toArray();
-			LOGGER.debug("intArray: " + Arrays.toString(intArray));
+			LOGGER.debug("intArray = " + Arrays.toString(intArray));
 
 			boolean isFalsePositive = true;
 
@@ -67,8 +82,8 @@ public class ReducerTester
 			// (i.e. the position to hit in the bloom filter)
 			for (IntWritable i : intArray) {
 				int index = i.get();
-				LOGGER.debug("Index=" + index + " key=" + key +
-						" BF_size=" + bloomFilter.length);
+				LOGGER.debug("Index = " + index + " key = " + key +
+						" BF_size = " + bloomFilter.length);
 
 				if (index < 0 || index >= bloomFilter.length) {
 					LOGGER.error("Index " + index + " for key " + key +
@@ -98,7 +113,7 @@ public class ReducerTester
 
 		LOGGER.debug("#tests = " + numberOfTests);
 		LOGGER.debug("#falsePositive = " + numberOfFalsePositives);
-		LOGGER.debug("key: " + key + ", false positive probability = " + SERIALIZABLE_FALSE_POSITIVE);
+		LOGGER.debug("key = " + key + ", false positive probability = " + SERIALIZABLE_FALSE_POSITIVE);
 	}
 
 }

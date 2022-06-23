@@ -16,6 +16,16 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+/**
+ * Mapper of the mapreduce tester application that computes the false positive probability
+ * of a bloom filter, given in input.
+ * <ul>
+ * <li>Input key: id of the line extracted from the input text file (LongWritable)</li>
+ * <li>Input value: text of the line (Text)</li>
+ * <li>Output key: rating value of the record (ByteWritable)</li>
+ * <li>Output value: array with the hash values of the line (TesterGenericWritable)</li>
+ * </ul>
+ */
 public class MapperTesterForHashValues extends Mapper<LongWritable, Text, ByteWritable, TesterGenericWritable> {
 	// Logger
 	private static final Logger LOGGER = LogManager.getLogger(MapperTesterForHashValues.class);
@@ -99,6 +109,7 @@ public class MapperTesterForHashValues extends Mapper<LongWritable, Text, ByteWr
 		// Setting the output values
 		outputKey.set(rating);
 		hashArrayWritable.set(hashes);
+		// Wrap the hash values array and send it to the appropriate reducer task
 		outputValue.set(hashArrayWritable);
 
 		// Emit the key-value pair

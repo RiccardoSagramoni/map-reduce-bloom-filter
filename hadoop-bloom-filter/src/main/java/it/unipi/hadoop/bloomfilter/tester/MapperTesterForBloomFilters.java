@@ -8,10 +8,17 @@ import org.apache.hadoop.mapreduce.Mapper;
 import java.io.IOException;
 
 /**
- * Class which reads the output of the builder (i.e. the bloom filter)
+ * Second mapper of the mapreduce tester application that
+ * reads the output of the builder (i.e. the bloom filter)
  * and maps it according to the key (i.e. the rating value).<br>
  * It simply distributes the bloom filters to the reducer tasks, so that
  * they can be tested.
+ * <ul>
+ * <li>Input key: rating value of the record (ByteWritable)</li>
+ * <li>Input value: bloom filter structure (BooleanArrayWritable)</li>
+ * <li>Output key: rating value of the record (ByteWritable)</li>
+ * <li>Output value: bloom filter wrapped in a different structure (TesterGenericWritable)</li>
+ * </ul>
  */
 public class MapperTesterForBloomFilters
 		extends Mapper<ByteWritable, BooleanArrayWritable, ByteWritable, TesterGenericWritable>
