@@ -1,5 +1,6 @@
 package it.unipi.hadoop.bloomfilter.builder;
 
+import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.*;
@@ -46,7 +47,7 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 				"bloom.filter.hash",
 				-1
 		);
-		LOGGER.info("Number of hash functions = " + HASH_FUNCTIONS_NUMBER);
+		LOGGER.debug("Number of hash functions = " + HASH_FUNCTIONS_NUMBER);
 	}
 
 
@@ -64,21 +65,23 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 			return;
 		}
 		String movieId = itr.nextToken();
-		LOGGER.info("movieId = " + movieId);
+		LOGGER.debug("movieId = " + movieId);
 
 		if (!itr.hasMoreTokens()){
 			LOGGER.error("Input line has not enough tokens: " + value);
 			return;
 		}
 		byte rating = (byte) Math.round(Double.parseDouble(itr.nextToken()));
-		LOGGER.info("Rating = " + rating);
+		LOGGER.debug("Rating = " + rating);
+
+
+
 
 		Integer bloomFilterSize = BLOOM_FILTER_SIZE.get(rating);
 		if (bloomFilterSize == null) {
 			LOGGER.error("Rating key " + rating + " doesn't exist in linecount");
 			return;
 		}
-
 
 		// Local array of IntWritable to contain the hashes of the movie's id
 		IntWritable[] hashes = new IntWritable[HASH_FUNCTIONS_NUMBER];
@@ -96,6 +99,8 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 
 		LOGGER.debug("WRITE (key, value) = ( " + rating + ",  " + Arrays.toString(hashes) + " )");
 
+
+
 		// Setting the output values
 		outputKey.set(rating);
 		outputValue.set(hashes);
@@ -103,4 +108,5 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 		// Emit the key-value pair
 		context.write(outputKey, outputValue);
 	}
+
 }

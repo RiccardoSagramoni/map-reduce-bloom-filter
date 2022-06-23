@@ -1,6 +1,5 @@
 package it.unipi.hadoop.bloomfilter.tester;
 
-import it.unipi.hadoop.bloomfilter.builder.BloomFilterUtils;
 import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
 import it.unipi.hadoop.bloomfilter.writables.GenericObject;
@@ -11,22 +10,21 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Map;
 
 public class ReducerTester
 		extends Reducer<ByteWritable, GenericObject, ByteWritable, DoubleWritable>
 {
-
+	// Logger
 	private static final Logger LOGGER = LogManager.getLogger(ReducerTester.class);
 
-	private final DoubleWritable SERIALIZABLE_FALSE_POSITIVE = new DoubleWritable(0);
+	private final DoubleWritable SERIALIZABLE_FALSE_POSITIVE = new DoubleWritable();
 
 
 	@Override
 	public void reduce (ByteWritable key, Iterable<GenericObject> values, Context context)
-			throws IOException, InterruptedException {
-
-		LOGGER.info("Reducer key = " + key);
+			throws IOException, InterruptedException
+	{
+		LOGGER.debug("Reducer key = " + key);
 
 		// Declare the bloomFilter
 		BooleanWritable[] bloomFilter = null;
@@ -93,16 +91,14 @@ public class ReducerTester
 				numberOfFalsePositives++;
 			}
 
-			LOGGER.debug("#tests_0 = " + numberOfTests);
-			LOGGER.debug("#falsePositive_0 = " + numberOfFalsePositives);
 		}
 
-		if (numberOfTests != 0)
-			SERIALIZABLE_FALSE_POSITIVE.set(numberOfFalsePositives / numberOfTests);
+		SERIALIZABLE_FALSE_POSITIVE.set(numberOfFalsePositives / numberOfTests);
 		context.write(key, SERIALIZABLE_FALSE_POSITIVE);
-		LOGGER.info("#tests = " + numberOfTests);
-		LOGGER.info("#falsePositive = " + numberOfFalsePositives);
-		LOGGER.info("key: " + key + ", false positive probability = " + SERIALIZABLE_FALSE_POSITIVE);
+
+		LOGGER.debug("#tests = " + numberOfTests);
+		LOGGER.debug("#falsePositive = " + numberOfFalsePositives);
+		LOGGER.debug("key: " + key + ", false positive probability = " + SERIALIZABLE_FALSE_POSITIVE);
 	}
 
 }

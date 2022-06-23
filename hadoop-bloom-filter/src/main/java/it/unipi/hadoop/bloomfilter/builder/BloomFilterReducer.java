@@ -1,5 +1,6 @@
 package it.unipi.hadoop.bloomfilter.builder;
 
+import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
 import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
 import org.apache.hadoop.io.*;
@@ -37,7 +38,7 @@ public class BloomFilterReducer
 	@Override
 	public void setup (Context context) {
 		BLOOM_FILTER_SIZE = BloomFilterUtils.readConfigurationBloomFiltersSize(context.getConfiguration());
-		LOGGER.info("Bloom filter size = " + BLOOM_FILTER_SIZE);
+		LOGGER.debug("Bloom filter size = " + BLOOM_FILTER_SIZE);
 	}
 
 
@@ -46,15 +47,13 @@ public class BloomFilterReducer
 	public void reduce (ByteWritable key, Iterable<IntArrayWritable> values, Context context)
 			throws IOException, InterruptedException
 	{
-		LOGGER.info("Reducer key = " + key);
-
+		LOGGER.debug("Reducer key = " + key);
 
 		// Instantiate the temporary bloom filter, i.e. an array of BooleanWritable
 		BooleanWritable[] bloomFilter = new BooleanWritable[BLOOM_FILTER_SIZE.get(key.get())];
 		for (int i = 0; i < bloomFilter.length; i++) {
 			bloomFilter[i] = new BooleanWritable(false);
 		}
-		//LOGGER.debug("bloomFilter = " + Arrays.toString(bloomFilter));
 
 
 
@@ -62,7 +61,7 @@ public class BloomFilterReducer
 		for (IntArrayWritable array : values) {
 			// Generate an iterable array
 			IntWritable[] arrayWithHashedIndexes = (IntWritable[]) array.toArray();
-			LOGGER.info("IntWritable array = " + Arrays.toString(arrayWithHashedIndexes));
+			LOGGER.debug("IntWritable array = " + Arrays.toString(arrayWithHashedIndexes));
 
 
 			// Iterate the list of BF indexes produced by mapper's hash functions
@@ -81,12 +80,13 @@ public class BloomFilterReducer
 				if (!bloomFilter[indexToSet].get()) {
 					bloomFilter[indexToSet].set(true);
 				}
+
 			}
 
 		}
 
 		LOGGER.debug("Bloom filter length = " + bloomFilter.length);
-		//LOGGER.debug("Bloom filter = " + Arrays.toString(bloomFilter));
+		LOGGER.debug("Bloom filter = " + Arrays.toString(bloomFilter));
 
 		// Emit the reducer's results
 		SERIALIZABLE_BLOOM_FILTER.set(bloomFilter);

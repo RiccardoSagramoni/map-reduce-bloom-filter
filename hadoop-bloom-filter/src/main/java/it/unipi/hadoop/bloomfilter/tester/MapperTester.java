@@ -1,6 +1,6 @@
 package it.unipi.hadoop.bloomfilter.tester;
 
-import it.unipi.hadoop.bloomfilter.builder.BloomFilterUtils;
+import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
 import it.unipi.hadoop.bloomfilter.writables.GenericObject;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
 import org.apache.hadoop.conf.Configuration;
@@ -17,85 +17,92 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 public class MapperTester extends Mapper<LongWritable, Text, ByteWritable, GenericObject> {
-    // Logger
-    private static final Logger LOGGER = LogManager.getLogger(MapperTester.class);
+	// Logger
+	private static final Logger LOGGER = LogManager.getLogger(MapperTester.class);
 
-    // Number of hash functions that must be applied
-    private int HASH_FUNCTIONS_NUMBER;
-    // Size of each bloom filter
-    private Map<Byte, Integer> BLOOM_FILTER_SIZE;
+	// Number of hash functions that must be applied
+	private int HASH_FUNCTIONS_NUMBER;
+	// Size of each bloom filter
+	private Map<Byte, Integer> BLOOM_FILTER_SIZE;
 
-    // Array of IntWritable for the output value of the mapper
-    private final IntArrayWritable outputValue = new IntArrayWritable();
-    // ByteWritable for the output key
-    private final ByteWritable outputKey = new ByteWritable();
+	// Array of IntWritable for the output value of the mapper
+	private final IntArrayWritable hashArrayWritable = new IntArrayWritable();
+	// Generic wrapper for the array of IntWritable hash values
+	private final GenericObject outputValue = new GenericObject();
+	// ByteWritable for the output key
+	private final ByteWritable outputKey = new ByteWritable();
 
-    // Instance of the hash function MURMUR_HASH
-    private final Hash hash = Hash.getInstance(Hash.MURMUR_HASH);
-
-
-
-    @Override
-    public void setup (Context context) {
-        // Retrieve configuration
-        Configuration configuration = context.getConfiguration();
-
-        // Read size of the bloom filters
-        BLOOM_FILTER_SIZE = BloomFilterUtils.readConfigurationBloomFiltersSize(configuration);
-        LOGGER.debug("BLOOM_FILTER_SIZE: " + BLOOM_FILTER_SIZE);
-
-        // Read how many hash functions must be implemented
-        HASH_FUNCTIONS_NUMBER = context.getConfiguration().getInt(
-                "bloom.filter.hash",
-                -1
-        );
-        LOGGER.debug("Number of hash functions = " + HASH_FUNCTIONS_NUMBER);
-    }
+	// Instance of the hash function MURMUR_HASH
+	private final Hash hash = Hash.getInstance(Hash.MURMUR_HASH);
 
 
 
-    @Override
-    public void map (LongWritable key, Text value, Context context)
-            throws IOException, InterruptedException
-    {
-        // Create string tokenizer to extract movie id and rating
-        StringTokenizer itr = new StringTokenizer(value.toString());
+	@Override
+	public void setup (Context context) {
+		// Retrieve configuration
+		Configuration configuration = context.getConfiguration();
 
-        // Retrieve the tokens obtained
-        if (!itr.hasMoreTokens()) {
-            LOGGER.error("Input line has not enough tokens: " + value);
-            return;
-        }
-        String movieId = itr.nextToken();
+		// Read size of the bloom filters
+		BLOOM_FILTER_SIZE = BloomFilterUtils.readConfigurationBloomFiltersSize(configuration);
+		LOGGER.debug("BLOOM_FILTER_SIZE: " + BLOOM_FILTER_SIZE);
 
-        if (!itr.hasMoreTokens()){
-            LOGGER.error("Input line has not enough tokens: " + value);
-            return;
-        }
-        byte rating = (byte) Math.round(Double.parseDouble(itr.nextToken()));
+		// Read how many hash functions must be implemented
+		HASH_FUNCTIONS_NUMBER = context.getConfiguration().getInt(
+				"bloom.filter.hash",
+				-1
+		);
+		LOGGER.debug("Number of hash functions = " + HASH_FUNCTIONS_NUMBER);
+	}
 
 
-        // Local array of IntWritable to contain the hashes of the movie's id
-        IntWritable[] hashes = new IntWritable[HASH_FUNCTIONS_NUMBER];
 
-        // Apply the hash function with different seeds, to obtain HASH_FUNCTIONS_NUMBER values
-        for (int i = 0; i < HASH_FUNCTIONS_NUMBER; i++){
-            int hashValue = hash.hash(movieId.getBytes(StandardCharsets.UTF_8), i);
+	@Override
+	public void map (LongWritable key, Text value, Context context)
+			throws IOException, InterruptedException
+	{
+		// Create string tokenizer to extract movie id and rating
+		StringTokenizer itr = new StringTokenizer(value.toString());
 
-            hashes[i] = new IntWritable(
-                    Math.abs(hashValue % Integer.valueOf(BLOOM_FILTER_SIZE.get(rating)))
-            );
+		// Retrieve the tokens obtained
+		if (!itr.hasMoreTokens()) {
+			LOGGER.error("Input line has not enough tokens: " + value);
+			return;
+		}
+		String movieId = itr.nextToken();
 
-            LOGGER.debug("Computed hash n." + i + ": " + hashes[i]);
-        }
+		if (!itr.hasMoreTokens()){
+			LOGGER.error("Input line has not enough tokens: " + value);
+			return;
+		}
+		byte rating = (byte) Math.round(Double.parseDouble(itr.nextToken()));
 
-        LOGGER.debug("WRITE (key, value) = ( " + rating + ",  " + Arrays.toString(hashes) + " )");
 
-        // Setting the output values
-        outputKey.set(rating);
-        outputValue.set(hashes);
 
-        // Emit the key-value pair
-        context.write(outputKey, new GenericObject(outputValue));
-    }
+		// Local array of IntWritable to contain the hashes of the movie's id
+		IntWritable[] hashes = new IntWritable[HASH_FUNCTIONS_NUMBER];
+
+		// Apply the hash function with different seeds, to obtain HASH_FUNCTIONS_NUMBER values
+		for (int i = 0; i < HASH_FUNCTIONS_NUMBER; i++){
+			int hashValue = hash.hash(movieId.getBytes(StandardCharsets.UTF_8), i);
+
+			hashes[i] = new IntWritable(
+					Math.abs(hashValue % BLOOM_FILTER_SIZE.get(rating))
+			);
+
+			LOGGER.debug("Computed hash n." + i + ": " + hashes[i]);
+		}
+
+		LOGGER.debug("WRITE (key, value) = ( " + rating + ",  " + Arrays.toString(hashes) + " )");
+
+
+
+		// Setting the output values
+		outputKey.set(rating);
+		hashArrayWritable.set(hashes);
+		outputValue.set(hashArrayWritable);
+
+		// Emit the key-value pair
+		context.write(outputKey, outputValue);
+	}
+
 }

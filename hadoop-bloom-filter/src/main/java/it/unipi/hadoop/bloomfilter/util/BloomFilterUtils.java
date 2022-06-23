@@ -1,4 +1,4 @@
-package it.unipi.hadoop.bloomfilter.builder;
+package it.unipi.hadoop.bloomfilter.util;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.LogManager;
