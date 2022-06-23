@@ -1,6 +1,6 @@
 package it.unipi.hadoop.bloomfilter.tester;
 
-import it.unipi.hadoop.bloomfilter.writables.GenericObject;
+import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ByteWritable;
@@ -114,7 +114,7 @@ public class BloomFilterTester {
 				job,
 				input_dataset,
 				NLineInputFormat.class,
-				MapperTester.class // Reuse mapper for building bloom filter
+				MapperTesterForHashValues.class // Reuse mapper for building bloom filter
 		);
 		job.getConfiguration().setInt(
 				"mapreduce.input.lineinputformat.linespermap",
@@ -131,7 +131,7 @@ public class BloomFilterTester {
 
 		// Configure output key/value for mappers
 		job.setMapOutputKeyClass(ByteWritable.class);
-		job.setMapOutputValueClass(GenericObject.class);
+		job.setMapOutputValueClass(TesterGenericWritable.class);
 
 
 		// Configure reducer

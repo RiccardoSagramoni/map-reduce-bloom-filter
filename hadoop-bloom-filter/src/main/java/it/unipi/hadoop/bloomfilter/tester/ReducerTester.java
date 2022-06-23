@@ -2,7 +2,7 @@ package it.unipi.hadoop.bloomfilter.tester;
 
 import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
-import it.unipi.hadoop.bloomfilter.writables.GenericObject;
+import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.log4j.LogManager;
@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class ReducerTester
-		extends Reducer<ByteWritable, GenericObject, ByteWritable, DoubleWritable>
+		extends Reducer<ByteWritable, TesterGenericWritable, ByteWritable, DoubleWritable>
 {
 	// Logger
 	private static final Logger LOGGER = LogManager.getLogger(ReducerTester.class);
@@ -21,7 +21,7 @@ public class ReducerTester
 
 
 	@Override
-	public void reduce (ByteWritable key, Iterable<GenericObject> values, Context context)
+	public void reduce (ByteWritable key, Iterable<TesterGenericWritable> values, Context context)
 			throws IOException, InterruptedException
 	{
 		LOGGER.debug("Reducer key = " + key);
@@ -30,7 +30,7 @@ public class ReducerTester
 		BooleanWritable[] bloomFilter = null;
 
 		// Get the bloom filter from the input values
-		for (GenericObject object : values) {
+		for (TesterGenericWritable object : values) {
 			if (object.get() instanceof BooleanArrayWritable) {
 				BooleanArrayWritable booleanArrayWritable = (BooleanArrayWritable) object.get();
 				bloomFilter = (BooleanWritable[]) booleanArrayWritable.toArray();
@@ -51,7 +51,7 @@ public class ReducerTester
 		double numberOfTests = 0, numberOfFalsePositives = 0;
 
 		// Get the intermediate results from the mapper
-		for (GenericObject object : values) {
+		for (TesterGenericWritable object : values) {
 			// Skip the bloom filter
 			if (object.get() instanceof BooleanArrayWritable) {
 				continue;

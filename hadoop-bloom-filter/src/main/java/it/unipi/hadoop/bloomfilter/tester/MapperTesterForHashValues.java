@@ -1,7 +1,7 @@
 package it.unipi.hadoop.bloomfilter.tester;
 
 import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
-import it.unipi.hadoop.bloomfilter.writables.GenericObject;
+import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.*;
@@ -16,9 +16,9 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-public class MapperTester extends Mapper<LongWritable, Text, ByteWritable, GenericObject> {
+public class MapperTesterForHashValues extends Mapper<LongWritable, Text, ByteWritable, TesterGenericWritable> {
 	// Logger
-	private static final Logger LOGGER = LogManager.getLogger(MapperTester.class);
+	private static final Logger LOGGER = LogManager.getLogger(MapperTesterForHashValues.class);
 
 	// Number of hash functions that must be applied
 	private int HASH_FUNCTIONS_NUMBER;
@@ -28,7 +28,7 @@ public class MapperTester extends Mapper<LongWritable, Text, ByteWritable, Gener
 	// Array of IntWritable for the output value of the mapper
 	private final IntArrayWritable hashArrayWritable = new IntArrayWritable();
 	// Generic wrapper for the array of IntWritable hash values
-	private final GenericObject outputValue = new GenericObject();
+	private final TesterGenericWritable outputValue = new TesterGenericWritable();
 	// ByteWritable for the output key
 	private final ByteWritable outputKey = new ByteWritable();
 

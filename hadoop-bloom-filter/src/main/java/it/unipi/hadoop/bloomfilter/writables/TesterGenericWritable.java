@@ -2,7 +2,7 @@ package it.unipi.hadoop.bloomfilter.writables;
 
 import org.apache.hadoop.io.GenericWritable;
 
-public class GenericObject extends GenericWritable {
+public class TesterGenericWritable extends GenericWritable {
 
 	private static Class[] CLASSES = {
 			BooleanArrayWritable.class, // bloom filter
