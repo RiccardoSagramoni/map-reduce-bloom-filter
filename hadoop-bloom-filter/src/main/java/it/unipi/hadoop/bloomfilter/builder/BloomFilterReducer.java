@@ -1,5 +1,6 @@
 package it.unipi.hadoop.bloomfilter.builder;
 
+import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
 import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
 import org.apache.hadoop.io.*;
@@ -14,9 +15,9 @@ import java.util.Map;
 /**
  * Reducer of the mapreduce application that builds a bloom filter.
  * <ul>
- * <li>Input key: average rating (IntWritable)</li>
+ * <li>Input key: average rating (ByteWritable)</li>
  * <li>Input value: array of position to set to 1 in the bloom filter (IntArrayWritable)</li>
- * <li>Output key: average rating (IntWritable)</li>
+ * <li>Output key: average rating (ByteWritable)</li>
  * <li>Output value: bloom filter structure (BooleanArrayWritable)</li>
  * </ul>
  */
@@ -48,13 +49,11 @@ public class BloomFilterReducer
 	{
 		LOGGER.debug("Reducer key = " + key);
 
-
 		// Instantiate the temporary bloom filter, i.e. an array of BooleanWritable
 		BooleanWritable[] bloomFilter = new BooleanWritable[BLOOM_FILTER_SIZE.get(key.get())];
 		for (int i = 0; i < bloomFilter.length; i++) {
 			bloomFilter[i] = new BooleanWritable(false);
 		}
-		LOGGER.debug("bloomFilter = " + Arrays.toString(bloomFilter));
 
 
 
@@ -71,7 +70,7 @@ public class BloomFilterReducer
 				LOGGER.debug("indexToSet = " + indexToSet);
 
 				// Check if index is a valid number
-				if (indexToSet < 0 || indexToSet >= BLOOM_FILTER_SIZE.get(key.get())) {
+				if (indexToSet < 0 || indexToSet >= bloomFilter.length) {
 					LOGGER.warn("Index " + indexToSet +
 							" for key " + key + " is not valid");
 					continue;
@@ -81,6 +80,7 @@ public class BloomFilterReducer
 				if (!bloomFilter[indexToSet].get()) {
 					bloomFilter[indexToSet].set(true);
 				}
+
 			}
 
 		}

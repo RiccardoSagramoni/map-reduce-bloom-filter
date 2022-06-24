@@ -1,11 +1,11 @@
 package it.unipi.hadoop.bloomfilter.builder;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.HashMap;
 import java.util.Map;
 
+import it.unipi.hadoop.bloomfilter.util.BloomFilterConfigurationName;
+import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
+import it.unipi.hadoop.bloomfilter.util.MapReduceParameters;
 import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
 import org.apache.hadoop.io.*;
@@ -16,74 +16,26 @@ import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
+/**
+ * Launch the MapReduce job for generating the bloom filters
+ * from a given dataset.<br><br>
+ * Use the following command to launch the application: <br>
+ * <code>
+ *     hadoop jar <i>application.jar</i> it.unipi.hadoop.bloomfilter.builder.BloomFilter
+ *     	<i>&#60;false_positive_probability&#62;</i> <i>training_dataset_path</i>
+ *     	<i>output_path</i> <i>linecount_output_path</i>
+ * </code>
+ */
 public class BloomFilter {
 
-	private static final int NUMBER_OF_REDUCERS = 4;
-	private static final int LINES_PER_MAP = 10000;
-
 	/**
-	 * TODO
-	 * @param falsePositiveProbability
-	 * @return
-	 */
-	private static int computeNumberOfHashFunctions (double falsePositiveProbability) {
-		return (int)(Math.ceil(-(Math.log(falsePositiveProbability)/(Math.log(2)))));
-	}
-
-
-	/**
-	 * TODO
-	 * @param falsePositiveProbability
-	 * @param numberOfInputs
-	 * @return
-	 */
-	private static int computeSizeOfBloomFilter (double falsePositiveProbability, int numberOfInputs) {
-		return (int)(Math.ceil(-(numberOfInputs * Math.log(falsePositiveProbability)) / (2 * (Math.log(2)))));
-	}
-
-	private static void generateConfiguration (Configuration configuration,
-	                                           double falsePositiveProbability,
-	                                           Map<Byte, Integer> sizeOfBloomFilters)
-	{
-		// Set bloomFilter parameters
-		configuration.setInt(
-				"bloom.filter.number", // how many bloom filter must be created
-				sizeOfBloomFilters.size()
-		);
-
-		int i = 0;
-		for (Map.Entry<Byte, Integer> entry : sizeOfBloomFilters.entrySet()) {
-			configuration.setInt(
-					"bloom.filter.size.key." + i, // rating key of the k-th bloom filter
-					entry.getKey()
-			);
-			configuration.setInt(
-					"bloom.filter.size.value." + i, // size of k-th bloom filter
-					entry.getValue()
-			);
-			i++;
-		}
-
-		configuration.setInt(
-				"bloom.filter.hash", // how many hash functions for each bloom filter
-				computeNumberOfHashFunctions(falsePositiveProbability)
-		);
-
-		System.out.println("Number of hash functions: " + computeNumberOfHashFunctions(falsePositiveProbability));
-		System.out.println("Rating -> bloom filter size: " + sizeOfBloomFilters);
-	}
-
-
-	/**
-	 * TODO
-	 * @param configuration
-	 * @param falsePositiveProbability
-	 * @param inputPath
-	 * @param outputPath
-	 * @return
-	 * @throws IOException
-	 * @throws ClassNotFoundException
-	 * @throws InterruptedException
+	 * Run the MapReduce job for building the bloom filters
+	 * @param configuration job configuration
+	 * @param falsePositiveProbability desired false positive probability
+	 * @param inputPath path to the input dataset
+	 * @param outputPath path to the output location
+	 * @param sizeOfBloomFilters map with the size of the corresponding bloom filter for each rating value
+	 * @return true on success, false on failure
 	 */
 	private static boolean runBloomFilterBuilder (Configuration configuration,
 												  double falsePositiveProbability,
@@ -95,7 +47,7 @@ public class BloomFilter {
 		// Creation of MapReduce job
 		Job job = Job.getInstance(configuration, "BloomFilter");
 
-		generateConfiguration(job.getConfiguration(), falsePositiveProbability, sizeOfBloomFilters);
+		BloomFilterUtils.generateConfiguration(job.getConfiguration(), falsePositiveProbability, sizeOfBloomFilters);
 
 		// Configure JAR
 		job.setJarByClass(BloomFilter.class);
@@ -109,14 +61,14 @@ public class BloomFilter {
 		job.setReducerClass(BloomFilterReducer.class);
 		job.setOutputKeyClass(ByteWritable.class);
 		job.setOutputValueClass(BooleanArrayWritable.class);
-		job.setNumReduceTasks(NUMBER_OF_REDUCERS);
+		job.setNumReduceTasks(MapReduceParameters.getInstance().getNumberOfReducersBuilder());
 
 		// Input configuration
 		job.setInputFormatClass(NLineInputFormat.class);
 		NLineInputFormat.setInputPaths(job, inputPath);
 		job.getConfiguration().setInt(
-				"mapreduce.input.lineinputformat.linespermap",
-				LINES_PER_MAP
+				BloomFilterConfigurationName.LINES_PER_MAP.toString(),
+				MapReduceParameters.getInstance().getLinesPerMapBuilder()
 		);
 
 		// Output configuration
@@ -127,52 +79,6 @@ public class BloomFilter {
 	}
 
 
-	/**
-	 * TODO
-	 * @param file
-	 * @param falsePositiveProbability
-	 * @throws IOException
-	 */
-	private static Map<Byte, Integer> getBloomFiltersSizeParameters (Configuration conf, Path file,
-	                                                                 Double falsePositiveProbability)
-			throws IOException
-	{
-		// Map each rating to the size its corresponding bloom filter
-		Map<Byte, Integer> sizeOfBloomFilters = new HashMap<>();
-
-		// Open file in HDFS
-		try (BufferedReader br = new BufferedReader(
-				new InputStreamReader(
-						file.getFileSystem(conf).open(file)
-				)
-			)
-		){
-			String line;
-
-			// Read each record of the dataset
-			while ((line = br.readLine()) != null) {
-				// Split the record
-				String[] splits = line.split("\\s+");
-
-				// Parse the record and put it in the map
-				sizeOfBloomFilters.put(
-						Byte.parseByte(splits[0]),
-						computeSizeOfBloomFilter(falsePositiveProbability, Integer.parseInt(splits[1]))
-				);
-			}
-
-		}
-
-		System.out.println("Bloom filter input data = " + sizeOfBloomFilters);
-		return sizeOfBloomFilters;
-	}
-
-
-	/**
-	 * TODO
-	 * @param args
-	 * @throws Exception
-	 */
 	public static void main (String[] args) throws Exception {
 
 		// Create configuration
@@ -191,10 +97,15 @@ public class BloomFilter {
 		Path output_file = new Path(otherArgs[2]);
 		Path linecount_file = new Path(otherArgs[3]);
 
-		// Read file
+		// Compute the size of bloom filters
 		Map<Byte, Integer> sizeOfBloomFilters =
-				getBloomFiltersSizeParameters(configuration, linecount_file, falsePositiveProbability);
+				BloomFilterUtils.getBloomFiltersSizeParameters(
+						configuration,
+						linecount_file,
+						falsePositiveProbability
+				);
 
+		// Launch the MapReduce job
 		boolean succeededJob = runBloomFilterBuilder(
 				configuration,
 				falsePositiveProbability,

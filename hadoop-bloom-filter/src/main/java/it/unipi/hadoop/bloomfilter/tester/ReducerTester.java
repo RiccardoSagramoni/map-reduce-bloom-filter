@@ -2,43 +2,63 @@ package it.unipi.hadoop.bloomfilter.tester;
 
 import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
-import it.unipi.hadoop.bloomfilter.writables.GenericObject;
+import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.util.Arrays;
 
+/**
+ * Reducer of the mapreduce tester application that computes the false probability
+ * of a bloom filter, given in input.
+ * <ul>
+ * <li>Input key: average rating (ByteWritable)</li>
+ * <li>Input value: output of two mappers (TesterGenericWritable):
+ * <ul>
+ *     <li>Bloom filter structure, from the builder (BooleanArrayWritable)</li>
+ *     <li>Array of position to check if set to 1 in the given bloom filter (IntArrayWritable)</li>
+ * </ul></li>
+ * <li>Output key: average rating (ByteWritable)</li>
+ * <li>Output value: false positive probability (DoubleWritable)</li>
+ * </ul>
+ */
 public class ReducerTester
-		extends Reducer<ByteWritable, GenericObject, ByteWritable, DoubleWritable>
+		extends Reducer<ByteWritable, TesterGenericWritable, ByteWritable, DoubleWritable>
 {
-	// Size of the bloom filter to be read from the configuration
-	private int BLOOM_FILTER_SIZE;
+	// Logger
+	private static final Logger LOGGER = LogManager.getLogger(ReducerTester.class);
+
+	// Value of the false positive probability
 	private final DoubleWritable SERIALIZABLE_FALSE_POSITIVE = new DoubleWritable();
 
-	@Override
-	public void setup(Context context){
-		BLOOM_FILTER_SIZE = context.getConfiguration().getInt("bloom.filter.size", 0);
-	}
 
 	@Override
-	public void reduce (ByteWritable key, Iterable<GenericObject> values, Context context)
-			throws IOException, InterruptedException{
+	public void reduce (ByteWritable key, Iterable<TesterGenericWritable> values, Context context)
+			throws IOException, InterruptedException
+	{
+		LOGGER.debug("Reducer key = " + key);
 
 		// Declare the bloomFilter
 		BooleanWritable[] bloomFilter = null;
 
 		// Get the bloom filter from the input values
-		for (GenericObject object : values) {
+		for (TesterGenericWritable object : values) {
 			if (object.get() instanceof BooleanArrayWritable) {
 				BooleanArrayWritable booleanArrayWritable = (BooleanArrayWritable) object.get();
 				bloomFilter = (BooleanWritable[]) booleanArrayWritable.toArray();
+
+				LOGGER.debug("bloomFilter = " + Arrays.toString(bloomFilter));
+				LOGGER.debug("bloomFilter length = " + bloomFilter.length);
 				break;
 			}
 		}
 
 		// Check if bloom filter was founded
 		if (bloomFilter == null) {
-			System.err.println("[TEST-REDUCER]: Bloom filter " + key + "doesn't exists");
+			LOGGER.error("BloomFilter " + key + " doesn't exist");
 			return;
 		}
 
@@ -46,14 +66,15 @@ public class ReducerTester
 		double numberOfTests = 0, numberOfFalsePositives = 0;
 
 		// Get the intermediate results from the mapper
-		for (GenericObject object : values) {
+		for (TesterGenericWritable object : values) {
 			// Skip the bloom filter
-			if (object.get() instanceof BooleanWritable) {
+			if (object.get() instanceof BooleanArrayWritable) {
 				continue;
 			}
 
 			// Convert to array of IntWritable (the outputs of the hash functions)
 			IntWritable[] intArray = (IntWritable[]) ( (IntArrayWritable)object.get() ).toArray();
+			LOGGER.debug("intArray = " + Arrays.toString(intArray));
 
 			boolean isFalsePositive = true;
 
@@ -61,10 +82,12 @@ public class ReducerTester
 			// (i.e. the position to hit in the bloom filter)
 			for (IntWritable i : intArray) {
 				int index = i.get();
+				LOGGER.debug("Index = " + index + " key = " + key +
+						" BF_size = " + bloomFilter.length);
 
-				if(index >= BLOOM_FILTER_SIZE){
-					System.err.println("[TEST-REDUCER]: Index " + index +
-							" out of bound for bloom filter " + key.get());
+				if (index < 0 || index >= bloomFilter.length) {
+					LOGGER.error("Index " + index + " for key " + key +
+							" not valid - out of bound");
 					return;
 				}
 
@@ -87,6 +110,10 @@ public class ReducerTester
 
 		SERIALIZABLE_FALSE_POSITIVE.set(numberOfFalsePositives / numberOfTests);
 		context.write(key, SERIALIZABLE_FALSE_POSITIVE);
+
+		LOGGER.debug("#tests = " + numberOfTests);
+		LOGGER.debug("#falsePositive = " + numberOfFalsePositives);
+		LOGGER.debug("key = " + key + ", false positive probability = " + SERIALIZABLE_FALSE_POSITIVE);
 	}
 
 }

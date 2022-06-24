@@ -1,12 +1,13 @@
-package it.unipi.hadoop.bloomfilter.builder;
+package it.unipi.hadoop.bloomfilter.tester;
 
 import it.unipi.hadoop.bloomfilter.util.BloomFilterConfigurationName;
 import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
+import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.util.hash.*;
+import org.apache.hadoop.util.hash.Hash;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -17,17 +18,18 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 /**
- * Mapper of the mapreduce application that builds a bloom filter.
+ * Mapper of the mapreduce tester application that computes the false positive probability
+ * of a bloom filter, given in input.
  * <ul>
  * <li>Input key: id of the line extracted from the input text file (LongWritable)</li>
  * <li>Input value: text of the line (Text)</li>
  * <li>Output key: rating value of the record (ByteWritable)</li>
- * <li>Output value: array with the hash values of the line (IntArrayWritable)</li>
+ * <li>Output value: array with the hash values of the line (TesterGenericWritable)</li>
  * </ul>
  */
-public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, IntArrayWritable> {
+public class MapperTesterForHashValues extends Mapper<LongWritable, Text, ByteWritable, TesterGenericWritable> {
 	// Logger
-	private static final Logger LOGGER = LogManager.getLogger(BloomFilterMapper.class);
+	private static final Logger LOGGER = LogManager.getLogger(MapperTesterForHashValues.class);
 
 	// Number of hash functions that must be applied
 	private int HASH_FUNCTIONS_NUMBER;
@@ -35,7 +37,9 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 	private Map<Byte, Integer> BLOOM_FILTER_SIZE;
 
 	// Array of IntWritable for the output value of the mapper
-	private final IntArrayWritable outputValue = new IntArrayWritable();
+	private final IntArrayWritable hashArrayWritable = new IntArrayWritable();
+	// Generic wrapper for the array of IntWritable hash values
+	private final TesterGenericWritable outputValue = new TesterGenericWritable();
 	// ByteWritable for the output key
 	private final ByteWritable outputKey = new ByteWritable();
 
@@ -51,6 +55,7 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 
 		// Read size of the bloom filters
 		BLOOM_FILTER_SIZE = BloomFilterUtils.readConfigurationBloomFiltersSize(configuration);
+		LOGGER.debug("BLOOM_FILTER_SIZE = " + BLOOM_FILTER_SIZE);
 
 		// Read how many hash functions must be implemented
 		HASH_FUNCTIONS_NUMBER = context.getConfiguration().getInt(
@@ -75,23 +80,14 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 			return;
 		}
 		String movieId = itr.nextToken();
-		LOGGER.debug("movieId = " + movieId);
 
 		if (!itr.hasMoreTokens()){
 			LOGGER.error("Input line has not enough tokens: " + value);
 			return;
 		}
 		byte rating = (byte) Math.round(Double.parseDouble(itr.nextToken()));
-		LOGGER.debug("Rating = " + rating);
 
 
-
-
-		Integer bloomFilterSize = BLOOM_FILTER_SIZE.get(rating);
-		if (bloomFilterSize == null) {
-			LOGGER.error("Rating key " + rating + " doesn't exist in linecount");
-			return;
-		}
 
 		// Local array of IntWritable to contain the hashes of the movie's id
 		IntWritable[] hashes = new IntWritable[HASH_FUNCTIONS_NUMBER];
@@ -101,7 +97,7 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 			int hashValue = hash.hash(movieId.getBytes(StandardCharsets.UTF_8), i);
 
 			hashes[i] = new IntWritable(
-					Math.abs(hashValue % bloomFilterSize)
+					Math.abs(hashValue % BLOOM_FILTER_SIZE.get(rating))
 			);
 
 			LOGGER.debug("Computed hash n." + i + ": " + hashes[i]);
@@ -113,7 +109,9 @@ public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, 
 
 		// Setting the output values
 		outputKey.set(rating);
-		outputValue.set(hashes);
+		hashArrayWritable.set(hashes);
+		// Wrap the hash values array and send it to the appropriate reducer task
+		outputValue.set(hashArrayWritable);
 
 		// Emit the key-value pair
 		context.write(outputKey, outputValue);
