@@ -18,10 +18,18 @@ def parse_arguments():
 def main():
 	# Parse command line arguments for the filename
 	input_file, output_file = parse_arguments()
-
+	
 	# Allocate Spark context
 	sc = SparkContext(appName="COUNT_NUMBER_OF_KEYS", master="yarn")
-
+	
+	"""
+		1. read dataset
+		2. map: split each line to extract [movieId, averageRating]
+		3. map: round averageRating to the closest integer and output (rating, 1)
+		4. reduceByKey: group by rating and count how many lines exist for each key (= sum the 1s)
+		5. map: generate output. Take (rating, count) and output string "rating count"
+		6. save the results as a text file
+	"""
 	sc.textFile(input_file) \
 		.map(lambda x: x.split('\t')[0:2]) \
 		.map(lambda x: (int(round(float(x[1]))), 1)) \
