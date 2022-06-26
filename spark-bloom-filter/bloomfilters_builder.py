@@ -1,6 +1,6 @@
-from pyspark import SparkContext
 import argparse
 import bloomfilters_util as util
+from pyspark import SparkContext
 
 
 def parse_arguments():
