@@ -20,7 +20,7 @@ def parse_arguments():
 	return args.false_positive_prob, args.dataset_input_file, args.linecount_file, args.output_file
 
 
-def computeHashes(line):
+def compute_hashes(line):
 	"""
 	Compute 'broadcastHashFunctionNumber' hashes for each movie's id
 	(hash function applied using different seeds)
@@ -32,7 +32,7 @@ def computeHashes(line):
 	return [mmh3.hash(movie_id, i) % bloom_filter_size for i in range(broadcastHashFunctionNumber.value)]
 
 
-def computeNumberOfHashFunctions():
+def compute_number_of_hash_functions():
 	"""
 	Compute how many hash functions are required for the bloom filter
 	:return: the number of hash functions
@@ -40,7 +40,7 @@ def computeNumberOfHashFunctions():
 	return int(round(- math.log(false_positive_prob) / math.log(2)))
 
 
-def computeSizeOfBloomFilter(number_of_inputs):
+def compute_size_of_bloom_filter(number_of_inputs):
 	"""
 	Compute the size of a bloom filter in order to meet the required false positive probability
 	:param number_of_inputs: estimated number of key that will be inserted in the bloom filter
@@ -49,29 +49,29 @@ def computeSizeOfBloomFilter(number_of_inputs):
 	return int(round(-(number_of_inputs * math.log(false_positive_prob)) / math.pow(math.log(2), 2)))
 
 
-def getSizeOfBloomFilters():
+def get_size_of_bloom_filters():
 	"""
 	Retrieve the size of each Bloom Filter
 	:return: an array of tuple containing the size of all Bloom Filters in the format (rating, size)
 	"""
 	return sc.textFile(linecount_file) \
 		.map(lambda x: x.split('\t')[0:2]) \
-		.map(lambda x: (x[0], computeSizeOfBloomFilter(x[1]))) \
+		.map(lambda x: (x[0], compute_size_of_bloom_filter(x[1]))) \
 		.collect()
 
 
-def initializeBloomFiltersArray():
+def initialize_bloom_filters_array():
 	"""
 	Instantiate the temporary Bloom Filters with all values to False
 	:return: the Bloom Filters created
 	"""
 	bloom_filters = dict()
 	for i, j in broadcastSizeOfBloomFilters.value:
-		bloom_filters[i] = [False for k in range(j)]
+		bloom_filters[i] = [False for _ in range(j)]
 	return bloom_filters
 
 
-def setBloomFilter(bloom_filter_hashes):
+def set_bloom_filter(bloom_filter_hashes):
 	"""
 	Set to True the corresponding item of the Bloom Filter
 	:param bloom_filter_hashes: K-V pair (rating, [hashes]), where the hash values are the index to set in the filter
@@ -87,9 +87,9 @@ if __name__ == '__main__':
 
 	sc = SparkContext(appName="BLOOM_FILTER", master="yarn")
 
-	broadcastHashFunctionNumber = sc.broadcast(computeNumberOfHashFunctions())
-	broadcastSizeOfBloomFilters = sc.broadcast(getSizeOfBloomFilters())
-	bloomFilters = initializeBloomFiltersArray()
+	broadcastHashFunctionNumber = sc.broadcast(compute_number_of_hash_functions())
+	broadcastSizeOfBloomFilters = sc.broadcast(get_size_of_bloom_filters())
+	bloomFilters = initialize_bloom_filters_array()
 
 	# map => (rating,posToSet) => x[0] = rating , x[1] = posToSet
 
@@ -104,7 +104,7 @@ if __name__ == '__main__':
 	# todo remove reduceByKey stage ?
 	sc.textFile(dataset_input_file) \
 		.map(lambda x: x.split('\t')[0:2]) \
-		.map(lambda x: (int(round(float(x[1]))), computeHashes(x))) \
+		.map(lambda x: (int(round(float(x[1]))), compute_hashes(x))) \
 		.reduceByKey(lambda x, y: list(set(x + y))) \
-		.map(lambda x: (x[0], setBloomFilter(x))) \
+		.map(lambda x: (x[0], set_bloom_filter(x))) \
 		.saveAsTextFile(output_file)
