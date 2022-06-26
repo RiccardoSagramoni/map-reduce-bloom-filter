@@ -44,6 +44,7 @@ if __name__ == '__main__':
 	false_positive_prob, dataset_input_file, linecount_file, output_file = parse_arguments()
 	
 	sc = SparkContext(appName="BLOOM_FILTER", master="yarn")
+	sc.addPyFile("bloomfilters_util.py")  # Add dependency
 	
 	broadcastHashFunctionNumber = sc.broadcast(util.compute_number_of_hash_functions())
 	broadcastSizeOfBloomFilters = sc.broadcast(util.get_size_of_bloom_filters())
@@ -65,4 +66,4 @@ if __name__ == '__main__':
 		.map(lambda x: (int(round(float(x[1]))), util.compute_hashes(x))) \
 		.reduceByKey(lambda x, y: list(set(x + y))) \
 		.map(lambda x: (x[0], set_bloom_filter(x))) \
-		.saveAsTextFile(output_file)
+		.saveAsObjectFile(output_file)
