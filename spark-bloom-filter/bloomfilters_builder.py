@@ -1,5 +1,6 @@
 import argparse
 import bloomfilters_util as util
+import mmh3
 from pyspark import SparkContext
 
 
@@ -18,21 +19,27 @@ def parse_arguments():
     return args.false_positive_prob, args.dataset_input_file, args.linecount_file, args.output_file
 
 
-def initialize_bloom_filters_array():
+def initialize_bloom_filters_array(size_of_bloom_filters: list) -> dict:
     """
     Instantiate the temporary Bloom Filters with all values to False
+    
+    :param size_of_bloom_filters: size of the bloom filters
+    
     :return: the Bloom Filters created
     """
     bloom_filters = dict()
-    for i, j in broadcast_size_of_bloom_filters.value:
+    for i, j in size_of_bloom_filters:
         bloom_filters[i] = [False for _ in range(j)]
     return bloom_filters
 
 
-def set_bloom_filter(bloom_filter_hashes):
+def set_bloom_filter(bloom_filters: dict, bloom_filter_hashes: list) -> dict:
     """
     Set to True the corresponding item of the Bloom Filter
+    
+    :param bloom_filters: the bloom filters to set
     :param bloom_filter_hashes: K-V pair (rating, [hashes]), where the hash values are the index to set in the filter
+    
     :return: the Bloom filters structure
     """
     for i in bloom_filter_hashes[1]:
@@ -40,15 +47,21 @@ def set_bloom_filter(bloom_filter_hashes):
     return bloom_filters
 
 
-if __name__ == '__main__':
+def main():
     false_positive_prob, dataset_input_file, linecount_file, output_file = parse_arguments()
     
     sc = SparkContext(appName="BLOOM_FILTER", master="yarn")
-    sc.addPyFile("bloomfilters_util.py")  # Add dependency
+    
+    # Add Python dependencies to Spark application
+    sc.addPyFile("bloomfilters_util.py")
+    sc.addPyFile(mmh3.__file__)
     
     broadcast_hash_function_number = sc.broadcast(util.compute_number_of_hash_functions(false_positive_prob))
-    broadcast_size_of_bloom_filters = sc.broadcast(util.get_size_of_bloom_filters(sc, linecount_file, false_positive_prob))
-    bloom_filters = initialize_bloom_filters_array()
+    broadcast_size_of_bloom_filters = sc.broadcast(
+        util.get_size_of_bloom_filters(sc, linecount_file, false_positive_prob)
+    )
+    # todo: bloom filter non dovrebbe essere broadcast?
+    bloom_filters = initialize_bloom_filters_array(broadcast_size_of_bloom_filters.value)
     
     # map => (rating,posToSet) => x[0] = rating , x[1] = posToSet
     
@@ -64,7 +77,16 @@ if __name__ == '__main__':
     sc.textFile(dataset_input_file) \
         .map(lambda x: x.split('\t')[0:2]) \
         .map(lambda x: (int(round(float(x[1]))),
-                        util.compute_hashes(x, broadcast_size_of_bloom_filters, broadcast_hash_function_number))) \
+                        util.compute_hashes(x,
+                                            broadcast_size_of_bloom_filters.value,
+                                            broadcast_hash_function_number.value
+                                            )
+                        )
+             ) \
         .reduceByKey(lambda x, y: list(set(x + y))) \
-        .map(lambda x: (x[0], set_bloom_filter(x))) \
-        .saveAsObjectFile(output_file)
+        .map(lambda x: (x[0], set_bloom_filter(bloom_filters, x))) \
+        .saveAsPickleFile(output_file)
+
+
+if __name__ == '__main__':
+    main()
