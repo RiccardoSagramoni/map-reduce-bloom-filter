@@ -19,32 +19,21 @@ def parse_arguments():
     return args.false_positive_prob, args.dataset_input_file, args.linecount_file, args.output_file
 
 
-def initialize_bloom_filters_array(size_of_bloom_filters: list) -> dict:
-    """
-    Instantiate the temporary Bloom Filters with all values to False
-    
-    :param size_of_bloom_filters: size of the bloom filters
-    
-    :return: the Bloom Filters created
-    """
-    bloom_filters = dict()
-    for i, j in size_of_bloom_filters:
-        bloom_filters[i] = [False for _ in range(j)]
-    return bloom_filters
-
-
-def set_bloom_filter(bloom_filters: dict, bloom_filter_hashes: list) -> dict:
+def generate_bloom_filter(indexes_to_set: list, size: int) -> list:
     """
     Set to True the corresponding item of the Bloom Filter
     
-    :param bloom_filters: the bloom filters to set
-    :param bloom_filter_hashes: K-V pair (rating, [hashes]), where the hash values are the index to set in the filter
+    :param indexes_to_set: list of indexes to set True (computed through hash functions)
+    :param size: size of the bloom filter
     
     :return: the Bloom filters structure
     """
-    for i in bloom_filter_hashes[1]:
-        bloom_filters[bloom_filter_hashes[0]][i] = True
-    return bloom_filters
+    bloom_filter = [False for _ in range(size)]
+    
+    for i in indexes_to_set:
+        bloom_filter[i] = True
+    
+    return bloom_filter
 
 
 def main():
@@ -60,8 +49,6 @@ def main():
     broadcast_size_of_bloom_filters = sc.broadcast(
         util.get_size_of_bloom_filters(sc, linecount_file, false_positive_prob)
     )
-    # todo: bloom filter non dovrebbe essere broadcast?
-    bloom_filters = initialize_bloom_filters_array(broadcast_size_of_bloom_filters.value)
     
     # map => (rating,posToSet) => x[0] = rating , x[1] = posToSet
     
@@ -71,20 +58,26 @@ def main():
         3. map: round averageRating to the closest integer and output the array of hashes of the movie's id
         4. reduceByKey: group by rating and create an unique list of all hash values computed in the previous step
         5. map: take (rating, [hashes]) and create the bloom filter setting to True the corresponding item of the array
-        6. save the results (the Bloom Filter) as a text file
+        6. save the results (the Bloom Filter) as a pickle file
     """
     # todo remove reduceByKey stage ?
     sc.textFile(dataset_input_file) \
-        .map(lambda x: x.split('\t')[0:2]) \
-        .map(lambda x: (int(round(float(x[1]))),
-                        util.compute_hashes(x,
-                                            broadcast_size_of_bloom_filters.value,
-                                            broadcast_hash_function_number.value
-                                            )
-                        )
+        .map(lambda line: line.split('\t')[0:2]) \
+        .map(lambda split_line: (int(round(float(split_line[1]))),
+                                 util.compute_hashes(split_line,
+                                                     broadcast_size_of_bloom_filters.value,
+                                                     broadcast_hash_function_number.value
+                                                     )
+                                 )
              ) \
-        .reduceByKey(lambda x, y: list(set(x + y))) \
-        .map(lambda x: (x[0], set_bloom_filter(bloom_filters, x))) \
+        .reduceByKey(lambda index_list_1, index_list_2: index_list_1 + index_list_2) \
+        .map(lambda pair_rating_hashes:
+             (pair_rating_hashes[0],
+              generate_bloom_filter(pair_rating_hashes[1],
+                                    broadcast_size_of_bloom_filters.value[pair_rating_hashes[0]]
+                                    )
+              )
+             ) \
         .saveAsPickleFile(output_file)
 
 
