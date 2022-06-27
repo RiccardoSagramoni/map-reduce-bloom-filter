@@ -56,7 +56,8 @@ def main():
         1. read dataset
         2. map: split each line to extract [movieId, averageRating]
         3. map: round averageRating to the closest integer and output the array of hashes of the movie's id
-        4. reduceByKey: group by rating and create an unique list of all hash values computed in the previous step
+        4. reduceByKey: group by rating and merge the `indexes to set` (computed in the previous step)
+                        without duplicates
         5. map: take (rating, [hashes]) and create the bloom filter setting to True the corresponding item of the array
         6. save the results (the Bloom Filter) as a pickle file
     """
@@ -70,7 +71,7 @@ def main():
                                                      )
                                  )
              ) \
-        .reduceByKey(lambda index_list_1, index_list_2: index_list_1 + index_list_2) \
+        .reduceByKey(lambda index_list_1, index_list_2: list(set(index_list_1 + index_list_2))) \
         .map(lambda pair_rating_hashes:
              (pair_rating_hashes[0],
               generate_bloom_filter(pair_rating_hashes[1],
