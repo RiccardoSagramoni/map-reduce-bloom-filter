@@ -43,15 +43,24 @@ def compute_size_of_bloom_filter(false_positive_prob: float, number_of_inputs: i
 
 def get_size_of_bloom_filters(sc: SparkContext, linecount_file: str, false_positive_prob: float) -> list:
     """
-    Retrieve the size of each Bloom Filter
+    Get the size of each Bloom Filter
     
     :param sc: Spark context
     :param linecount_file: name of the file with the number of keys for each rating
     :param false_positive_prob: desired probability of a false positive
     
-    :return: an array of tuple containing the size of all Bloom Filters in the format (rating, size)
+    :return: a list of tuple containing the size of all Bloom Filters in the format (rating, size)
     """
+    
+    '''
+        1. Read from file text
+        2. map: split each line to extract the tuple (rating, number of occurrences)
+        3. map: generate a tuple (rating, size of bloom filter)
+        4. collect: return the tuples as a list
+    '''
     return sc.textFile(linecount_file) \
-        .map(lambda x: x.split('\t')[0:2]) \
-        .map(lambda x: (x[0], compute_size_of_bloom_filter(false_positive_prob, int(x[1])))) \
+        .map(lambda line: line.split('\t')[0:2]) \
+        .map(lambda split_line: (int(split_line[0]),
+                                 compute_size_of_bloom_filter(false_positive_prob, int(split_line[1])))
+             ) \
         .collect()
