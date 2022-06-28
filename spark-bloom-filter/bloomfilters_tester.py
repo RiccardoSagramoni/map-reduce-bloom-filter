@@ -54,6 +54,17 @@ def sum_elem_lists(list1, list2):
     return list1
 
 
+def compute_false_positive_percentage(false_positive_list):
+    """
+    Compute the percentage of false positive given the number of false positive and the total number of movies
+    :param false_positive_list: list containing [#false_positive, #movies]
+    :return: a new list with che percentage too
+            [#false_positive, #movies, %false_positive_percentage]
+    """
+    false_positive_list.append(false_positive_list[0] / false_positive_list[1])
+    return false_positive_list
+
+
 def main():
     false_positive_prob, dataset_input_file, bloom_filters_file, linecount_file, output_file = parse_arguments()
     
@@ -103,8 +114,7 @@ def main():
                                       1])
              ) \
         .reduceByKey(sum_elem_lists()) \
-        .map(lambda rating_counters: (rating_counters[0], (rating_counters[1][0], rating_counters[1][1],
-                                                           rating_counters[1][0] / rating_counters[1][1]))) \
+        .map(lambda rating_counters: (rating_counters[0], (compute_false_positive_percentage(rating_counters[1])))) \
         .saveAsTextFile(output_file)
     
     print("\n\nBLOOM FILTERS TESTER COMPLETED\n\n")
