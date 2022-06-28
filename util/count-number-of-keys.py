@@ -24,17 +24,17 @@ def main():
 	
 	"""
 		1. read dataset
-		2. map: split each line to extract [movieId, averageRating]
+		2. map: split each line to extract the average rating value
 		3. map: round averageRating to the closest integer and output (rating, 1)
 		4. reduceByKey: group by rating and count how many lines exist for each key (= sum the 1s)
 		5. map: generate output. Take (rating, count) and output string "rating count"
 		6. save the results as a text file
 	"""
 	sc.textFile(input_file) \
-		.map(lambda x: x.split('\t')[0:2]) \
-		.map(lambda x: (int(round(float(x[1]))), 1)) \
-		.reduceByKey(lambda x, y: x + y) \
-		.map(lambda x: "{0}\t{1}".format(x[0], x[1])) \
+		.map(lambda line: line.split('\t')[1]) \
+		.map(lambda rating: (int(round(float(rating))), 1)) \
+		.reduceByKey(lambda value_1, value_2: value_1 + value_2) \
+		.map(lambda rating_count_pair: "{0}\t{1}".format(rating_count_pair[0], rating_count_pair[1])) \
 		.saveAsTextFile(output_file)
 
 
