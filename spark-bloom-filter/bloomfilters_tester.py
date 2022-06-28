@@ -41,6 +41,11 @@ def check_false_positive(indexes: list, bloom_filter: list) -> int:
     return 1
 
 
+def sum_elem_lists(list1, list2):
+    list1 = [x + y for x, y in zip(list1, list2)]
+    return list1
+
+
 def main():
     false_positive_prob, dataset_input_file, bloom_filters_file, linecount_file, output_file = parse_arguments()
     
@@ -67,36 +72,31 @@ def main():
     print(bloom_filters.value)
     
     """
-    TODO
-        1. read dataset
+        1. read tester dataset
         2. map: split each line to extract [movieId, averageRating]
         3. map: round averageRating to the closest integer and output the array of hashes of the movie's id
-        4. reduceByKey: group by rating and merge the `indexes to set` (computed in the previous step)
-                        without duplicates
-        5. map: take (rating, [hashes]) and create the bloom filter setting to True the corresponding item of the array
-        6. save the results (the Bloom Filter) as a pickle file
+        4. map: check if the movie is a false positive and count the iteration (rating, [false_positive, 1])
+        5. reduceByKey: group by rating and perform an element-wise addition to compute the number of false positive 
+                        and the total number of movie tested
+        6. map: take (rating, [#false_positive, #movies]) and compute the false positive percentage
+        7. save the results (rating, [#false_positive, #movies, %false_positive]) as a text file
     """
-    lines = sc.textFile(dataset_input_file) \
-        .map(lambda line: line.split('\t')[0:2])
-    
-    l = lines.map(lambda x: (int(round(float(x[0]))), 1)) \
-        .reduceByKey(lambda x, y: x + y) \
-        .collect()
-    
-    broadcast_line_count = sc.broadcast(dict(l))
-    
-    lines.map(lambda split_line: (int(round(float(split_line[1]))),
-                                  util.compute_hashes(split_line,
-                                                      broadcast_size_of_bloom_filters.value,
-                                                      broadcast_hash_function_number.value
-                                                      )
-                                  )
-              ) \
-        .map(lambda rating_indexes: (rating_indexes[0],
-                                     check_false_positive(rating_indexes[1], bloom_filters.value[rating_indexes[0]]))
+    sc.textFile(dataset_input_file) \
+        .map(lambda line: line.split('\t')[0:2]) \
+        .map(lambda split_line: (int(round(float(split_line[1]))),
+                                 util.compute_hashes(split_line,
+                                                     broadcast_size_of_bloom_filters.value,
+                                                     broadcast_hash_function_number.value
+                                                     )
+                                 )
              ) \
-        .reduceByKey(lambda x, y: x + y) \
-        .map(lambda x: (x[0], (x[1], broadcast_line_count.value[x[0]], x[1] / broadcast_line_count.value[x[0]]))) \
+        .map(lambda rating_indexes: (rating_indexes[0],
+                                     [check_false_positive(rating_indexes[1], bloom_filters.value[rating_indexes[0]]),
+                                      1])
+             ) \
+        .reduceByKey(sum_elem_lists()) \
+        .map(lambda rating_counters: (rating_counters[0], (rating_counters[1][0], rating_counters[1][1],
+                                                           rating_counters[1][0] / rating_counters[1][1]))) \
         .saveAsTextFile(output_file)
     
     print("\n\nBLOOM FILTERS TESTER COMPLETED\n\n")
