@@ -22,39 +22,23 @@ def parse_arguments():
            args.output_file
 
 
-def generate_bloom_filter(indexes_to_set: list, size: int) -> list:
+def check_false_positive(indexes: list, bloom_filter: list) -> int:
     """
-    Set to True the corresponding item of the Bloom Filter
+    Iterate the array of the hash values (i.e. the position indexes in the bloom filter)
+    to check the current value.
+    If at least one value is not set, then the sample is not a false positive
 
-    :param indexes_to_set: list of indexes to set True (computed through hash functions)
-    :param size: size of the bloom filter
+    :param indexes: list of indexes to check if set to True in the bloom filter
+    :param bloom_filter: list of a bloom filter created in the builder
 
-    :return: the Bloom filters structure
+    :return: 1 or 0 if the movie to check is a false positive (1) or not (0)
     """
-    bloom_filter = [False for _ in range(size)]
-    
-    for i in indexes_to_set:
-        bloom_filter[i] = True
-    
-    return bloom_filter
-
-
-def check_false_positive(rating: int, indexes: list, bloom_filters: dict) -> int:
-    """
-    TODO
-    :param rating:
-    :param indexes:
-    :param bloom_filters:
-    :return:
-    """
-    is_false_positive = 1
     
     for i in indexes:
-        if not bloom_filters[rating][i]:
-            is_false_positive = 0
-            break
-    
-    return is_false_positive
+        if not bloom_filter[i]:
+            return 0
+
+    return 1
 
 
 def main():
@@ -109,7 +93,7 @@ def main():
                                   )
               ) \
         .map(lambda rating_indexes: (rating_indexes[0],
-                                     check_false_positive(rating_indexes[0], rating_indexes[1], bloom_filters))
+                                     check_false_positive(rating_indexes[1], bloom_filters.value[rating_indexes[0]]))
              ) \
         .reduceByKey(lambda x, y: x + y) \
         .map(lambda x: (x[0], (x[1], broadcast_line_count.value[x[0]], x[1] / broadcast_line_count.value[x[0]]))) \
