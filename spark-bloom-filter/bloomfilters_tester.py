@@ -72,7 +72,7 @@ def main():
     broadcast_size_of_bloom_filters = sc.broadcast(
         util.get_size_of_bloom_filters(sc, linecount_file, false_positive_prob)
     )
-    broadcast_line_count
+
     print()
     print("Number of hash functions: " + str(broadcast_hash_function_number.value))
     print("Size of bloom filters: " + str(broadcast_size_of_bloom_filters.value))
@@ -112,7 +112,7 @@ def main():
                                      check_false_positive(rating_indexes[0], rating_indexes[1], bloom_filters))
              ) \
         .reduceByKey(lambda x, y: x + y) \
-        .map(lambda x: (x[0], x[1] / broadcast_line_count.value[x[0]])) \
+        .map(lambda x: (x[0], (x[1], broadcast_line_count.value[x[0]], x[1] / broadcast_line_count.value[x[0]]))) \
         .saveAsTextFile(output_file)
     
     print("\n\nBLOOM FILTERS TESTER COMPLETED\n\n")
