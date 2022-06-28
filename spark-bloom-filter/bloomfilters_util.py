@@ -30,7 +30,7 @@ def compute_number_of_hash_functions(false_positive_prob: float) -> int:
     
     :return: the number of hash functions
     """
-    return int(round(- math.log(false_positive_prob) / math.log(2)))
+    return int(math.ceil(- math.log(false_positive_prob) / math.log(2)))
 
 
 def compute_size_of_bloom_filter(false_positive_prob: float, number_of_inputs: int) -> int:
@@ -42,7 +42,7 @@ def compute_size_of_bloom_filter(false_positive_prob: float, number_of_inputs: i
     
     :return: the size of a single bloom filter
     """
-    return int(round(-(number_of_inputs * math.log(false_positive_prob)) / math.pow(math.log(2), 2)))
+    return int(math.ceil(-(number_of_inputs * math.log(false_positive_prob)) / math.pow(math.log(2), 2)))
 
 
 def get_size_of_bloom_filters(sc: SparkContext, linecount_file: str, false_positive_prob: float) -> dict:

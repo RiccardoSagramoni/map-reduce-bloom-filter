@@ -10,7 +10,7 @@ def parse_arguments():
     :return: parsed arguments
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('false_positive_prob', type=str, help='probability of false positives')
+    parser.add_argument('false_positive_prob', type=float, help='probability of false positives')
     parser.add_argument('dataset_input_file', type=str, help='path of the dataset')
     parser.add_argument('linecount_file', type=str, help='path of the linecount output file')
     parser.add_argument('output_file', type=str, help='path of the output file')
@@ -34,6 +34,17 @@ def generate_bloom_filter(indexes_to_set: list, size: int) -> list:
         bloom_filter[i] = True
     
     return bloom_filter
+
+
+def extend_list(list1: list, list2: list) -> list:
+    """
+        Concat the second list to the first one and return the first one
+        :param list1: first list
+        :param list2: second list
+        :return: merged list
+    """
+    list1.extend(list2)
+    return list1
 
 
 def main():
@@ -70,7 +81,7 @@ def main():
                                                      )
                                  )
              ) \
-        .reduceByKey(lambda index_list_1, index_list_2: list(set(index_list_1 + index_list_2))) \
+        .reduceByKey(extend_list) \
         .map(lambda pair_rating_hashes:
              (pair_rating_hashes[0],
               generate_bloom_filter(pair_rating_hashes[1],
@@ -78,6 +89,8 @@ def main():
               )
              ) \
         .saveAsPickleFile(output_file)
+    
+    print("\n\nBLOOMFILTERS BUILDER COMPLETED\n\n")
 
 
 if __name__ == '__main__':
