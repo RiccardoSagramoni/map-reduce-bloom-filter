@@ -72,8 +72,4 @@ def get_size_of_bloom_filters(sc: SparkContext, linecount_file: str, false_posit
         .collect()
     
     # Convert the list of tuples into a dictionary
-    size_of_bf_dict = dict()
-    for rating, number in size_of_bf_list:
-        size_of_bf_dict.setdefault(rating, number)
-    
-    return size_of_bf_dict
+    return dict(size_of_bf_list)
