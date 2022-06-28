@@ -12,20 +12,23 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('false_positive_prob', type=float, help='probability of false positives')
     parser.add_argument('dataset_input_file', type=str, help='path of the dataset')
+    parser.add_argument('bloom_filters_input_file', type=str, help='path to the output of the bloom filters builder')
     parser.add_argument('linecount_file', type=str, help='path of the linecount output file')
     parser.add_argument('output_file', type=str, help='path of the output file')
     args = parser.parse_args()
     
-    return args.false_positive_prob, args.dataset_input_file, args.linecount_file, args.output_file
+    return args.false_positive_prob, args.dataset_input_file, \
+           args.bloom_filters_input_file, args.linecount_file, \
+           args.output_file
 
 
 def generate_bloom_filter(indexes_to_set: list, size: int) -> list:
     """
     Set to True the corresponding item of the Bloom Filter
-    
+
     :param indexes_to_set: list of indexes to set True (computed through hash functions)
     :param size: size of the bloom filter
-    
+
     :return: the Bloom filters structure
     """
     bloom_filter = [False for _ in range(size)]
@@ -36,27 +39,36 @@ def generate_bloom_filter(indexes_to_set: list, size: int) -> list:
     return bloom_filter
 
 
-def extend_list(list1: list, list2: list) -> list:
+def check_false_positive(rating: int, indexes: list, bloomfilters: dict) -> int:
     """
-        Concat the second list to the first one and return the first one
-        :param list1: first list
-        :param list2: second list
-        :return: merged list
+    TODO
+    :param rating:
+    :param indexes:
+    :param bloomfilters:
+    :return:
     """
-    list1.extend(list2)
-    return list1
+    is_false_positive = 1
+    
+    for i in indexes:
+        if not bloomfilters[rating][i]:
+            is_false_positive = 0
+            break
+    
+    return is_false_positive
 
 
 def main():
-    false_positive_prob, dataset_input_file, linecount_file, output_file = parse_arguments()
+    false_positive_prob, dataset_input_file, bloom_filters_file, linecount_file, output_file = parse_arguments()
     
-    sc = SparkContext(appName="BLOOM_FILTER", master="yarn")
+    sc = SparkContext(appName="BLOOM_FILTER_TESTER", master="yarn")
     
     # Add Python dependencies to Spark application
     sc.addPyFile("bloomfilters_util.py")
     sc.addPyFile(mmh3.__file__)
     
-    broadcast_hash_function_number = sc.broadcast(util.compute_number_of_hash_functions(false_positive_prob))
+    broadcast_hash_function_number = sc.broadcast(
+        util.compute_number_of_hash_functions(false_positive_prob)
+    )
     broadcast_size_of_bloom_filters = sc.broadcast(
         util.get_size_of_bloom_filters(sc, linecount_file, false_positive_prob)
     )
@@ -65,9 +77,11 @@ def main():
     print("Size of bloom filters: " + str(broadcast_size_of_bloom_filters.value))
     print()
     
-    # map => (rating,posToSet) => x[0] = rating , x[1] = posToSet
-    
+    # Read bloom filters from the output file of the builder and distribute to the worker nodes
+    bloom_filters = sc.broadcast(dict(sc.pickleFile(bloom_filters_file).collect()))
+
     """
+    TODO
         1. read dataset
         2. map: split each line to extract [movieId, averageRating]
         3. map: round averageRating to the closest integer and output the array of hashes of the movie's id
@@ -85,16 +99,13 @@ def main():
                                                      )
                                  )
              ) \
-        .reduceByKey(extend_list) \
-        .map(lambda pair_rating_hashes:
-             (pair_rating_hashes[0],
-              generate_bloom_filter(pair_rating_hashes[1],
-                                    broadcast_size_of_bloom_filters.value[pair_rating_hashes[0]])
-              )
+        .map(lambda rating_indexes: (rating_indexes[0],
+                                     check_false_positive(rating_indexes[0], rating_indexes[1], bloom_filters))
              ) \
-        .saveAsPickleFile(output_file)
+        .reduceByKey(lambda x, y: x + y) \
+        .saveAsTextFile()
     
-    print("\n\nBLOOM FILTERS BUILDER COMPLETED\n\n")
+    print("\n\nBLOOM FILTERS TESTER COMPLETED\n\n")
 
 
 if __name__ == '__main__':
