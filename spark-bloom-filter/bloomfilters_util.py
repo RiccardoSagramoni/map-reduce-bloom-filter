@@ -64,7 +64,7 @@ def get_size_of_bloom_filters(sc: SparkContext, linecount_file: str, false_posit
         3. map: generate a tuple (rating, size of bloom filter)
         4. collect: return the tuples as a list
     '''
-    size_of_bf_list = sc.textFile(linecount_file)\
+    size_of_bf_list = sc.textFile(linecount_file) \
         .map(lambda line: line.split('\t')[0:2]) \
         .map(lambda split_line: (int(split_line[0]),
                                  compute_size_of_bloom_filter(false_positive_prob, int(split_line[1])))

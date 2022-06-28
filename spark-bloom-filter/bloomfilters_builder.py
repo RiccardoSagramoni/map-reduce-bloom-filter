@@ -61,7 +61,6 @@ def main():
         5. map: take (rating, [hashes]) and create the bloom filter setting to True the corresponding item of the array
         6. save the results (the Bloom Filter) as a pickle file
     """
-    # todo remove reduceByKey stage ?
     sc.textFile(dataset_input_file) \
         .map(lambda line: line.split('\t')[0:2]) \
         .map(lambda split_line: (int(round(float(split_line[1]))),
@@ -75,8 +74,7 @@ def main():
         .map(lambda pair_rating_hashes:
              (pair_rating_hashes[0],
               generate_bloom_filter(pair_rating_hashes[1],
-                                    broadcast_size_of_bloom_filters.value[pair_rating_hashes[0]]
-                                    )
+                                    broadcast_size_of_bloom_filters.value[pair_rating_hashes[0]])
               )
              ) \
         .saveAsPickleFile(output_file)
