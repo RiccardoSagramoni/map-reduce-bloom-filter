@@ -65,8 +65,6 @@ def main():
     print("Size of bloom filters: " + str(broadcast_size_of_bloom_filters.value))
     print()
     
-    # map => (rating,posToSet) => x[0] = rating , x[1] = posToSet
-    
     """
         1. read dataset
         2. map: split each line to extract [movieId, averageRating]

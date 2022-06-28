@@ -39,18 +39,18 @@ def generate_bloom_filter(indexes_to_set: list, size: int) -> list:
     return bloom_filter
 
 
-def check_false_positive(rating: int, indexes: list, bloomfilters: dict) -> int:
+def check_false_positive(rating: int, indexes: list, bloom_filters: dict) -> int:
     """
     TODO
     :param rating:
     :param indexes:
-    :param bloomfilters:
+    :param bloom_filters:
     :return:
     """
     is_false_positive = 1
     
     for i in indexes:
-        if not bloomfilters[rating][i]:
+        if not bloom_filters[rating][i]:
             is_false_positive = 0
             break
     
@@ -72,6 +72,7 @@ def main():
     broadcast_size_of_bloom_filters = sc.broadcast(
         util.get_size_of_bloom_filters(sc, linecount_file, false_positive_prob)
     )
+    broadcast_line_count
     print()
     print("Number of hash functions: " + str(broadcast_hash_function_number.value))
     print("Size of bloom filters: " + str(broadcast_size_of_bloom_filters.value))
@@ -79,7 +80,8 @@ def main():
     
     # Read bloom filters from the output file of the builder and distribute to the worker nodes
     bloom_filters = sc.broadcast(dict(sc.pickleFile(bloom_filters_file).collect()))
-
+    print(bloom_filters.value)
+    
     """
     TODO
         1. read dataset
@@ -90,20 +92,28 @@ def main():
         5. map: take (rating, [hashes]) and create the bloom filter setting to True the corresponding item of the array
         6. save the results (the Bloom Filter) as a pickle file
     """
-    sc.textFile(dataset_input_file) \
-        .map(lambda line: line.split('\t')[0:2]) \
-        .map(lambda split_line: (int(round(float(split_line[1]))),
-                                 util.compute_hashes(split_line,
-                                                     broadcast_size_of_bloom_filters.value,
-                                                     broadcast_hash_function_number.value
-                                                     )
-                                 )
-             ) \
+    lines = sc.textFile(dataset_input_file) \
+        .map(lambda line: line.split('\t')[0:2])
+    
+    l = lines.map(lambda x: (int(round(float(x[0]))), 1)) \
+        .reduceByKey(lambda x, y: x + y) \
+        .collect()
+    
+    broadcast_line_count = sc.broadcast(dict(l))
+    
+    lines.map(lambda split_line: (int(round(float(split_line[1]))),
+                                  util.compute_hashes(split_line,
+                                                      broadcast_size_of_bloom_filters.value,
+                                                      broadcast_hash_function_number.value
+                                                      )
+                                  )
+              ) \
         .map(lambda rating_indexes: (rating_indexes[0],
                                      check_false_positive(rating_indexes[0], rating_indexes[1], bloom_filters))
              ) \
         .reduceByKey(lambda x, y: x + y) \
-        .saveAsTextFile()
+        .map(lambda x: (x[0], x[1] / broadcast_line_count.value[x[0]])) \
+        .saveAsTextFile(output_file)
     
     print("\n\nBLOOM FILTERS TESTER COMPLETED\n\n")
 
