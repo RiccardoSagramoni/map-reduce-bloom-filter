@@ -42,6 +42,14 @@ def check_false_positive(indexes: list, bloom_filter: list) -> int:
 
 
 def sum_elem_lists(list1, list2):
+    """
+    Sum each element of the second list to the respective element of the first list
+
+    :param list1: first list
+    :param list2: second list
+
+    :return: computed list
+    """
     list1 = [x + y for x, y in zip(list1, list2)]
     return list1
 

@@ -39,8 +39,10 @@ def generate_bloom_filter(indexes_to_set: list, size: int) -> list:
 def extend_list(list1: list, list2: list) -> list:
     """
         Concat the second list to the first one and return the first one
+
         :param list1: first list
         :param list2: second list
+
         :return: merged list
     """
     list1.extend(list2)
