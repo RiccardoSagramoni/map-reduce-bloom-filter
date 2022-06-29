@@ -54,24 +54,13 @@ def sum_elem_lists(list1, list2):
     return list1
 
 
-def compute_false_positive_percentage(false_positive_list):
-    """
-    Compute the percentage of false positive given the number of false positive and the total number of movies
-    :param false_positive_list: list containing [#false_positive, #movies]
-    :return: a new list with che percentage too
-            [#false_positive, #movies, %false_positive_percentage]
-    """
-    false_positive_list.append(false_positive_list[0] / false_positive_list[1])
-    return false_positive_list
-
-
 def main():
     false_positive_prob, dataset_input_file, bloom_filters_file, linecount_file, output_file = parse_arguments()
     
     sc = SparkContext(appName="BLOOM_FILTER_TESTER", master="yarn")
     
     # Add Python dependencies to Spark application
-    sc.addPyFile("bloomfilters_util.py")
+    sc.addPyFile("./spark_test/bloomfilters_util.py")
     sc.addPyFile(mmh3.__file__)
     
     broadcast_hash_function_number = sc.broadcast(
@@ -88,7 +77,7 @@ def main():
     
     # Read bloom filters from the output file of the builder and distribute to the worker nodes
     bloom_filters = sc.broadcast(dict(sc.pickleFile(bloom_filters_file).collect()))
-    print(bloom_filters.value)
+    # print(bloom_filters.value)
     
     """
         1. read tester dataset
@@ -100,7 +89,7 @@ def main():
         6. map: take (rating, [#false_positive, #movies]) and compute the false positive percentage
         7. save the results (rating, [#false_positive, #movies, %false_positive]) as a text file
     """
-    sc.textFile(dataset_input_file) \
+    data = sc.textFile(dataset_input_file) \
         .map(lambda line: line.split('\t')[0:2]) \
         .map(lambda split_line: (int(round(float(split_line[1]))),
                                  util.compute_hashes(split_line,
@@ -113,9 +102,13 @@ def main():
                                      [check_false_positive(rating_indexes[1], bloom_filters.value[rating_indexes[0]]),
                                       1])
              ) \
-        .reduceByKey(sum_elem_lists()) \
-        .map(lambda rating_counters: (rating_counters[0], (compute_false_positive_percentage(rating_counters[1])))) \
-        .saveAsTextFile(output_file)
+        .reduceByKey(sum_elem_lists) \
+        .map(lambda rating_counters: (rating_counters[0], (rating_counters[1][0], rating_counters[1][1],
+                                                           rating_counters[1][0] / rating_counters[1][1])))
+
+    data.saveAsTextFile(output_file)
+
+    print(data.collect())
     
     print("\n\nBLOOM FILTERS TESTER COMPLETED\n\n")
 

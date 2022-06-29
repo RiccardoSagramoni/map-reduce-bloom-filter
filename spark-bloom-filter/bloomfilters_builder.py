@@ -55,7 +55,7 @@ def main():
     sc = SparkContext(appName="BLOOM_FILTER", master="yarn")
     
     # Add Python dependencies to Spark application
-    sc.addPyFile("bloomfilters_util.py")
+    sc.addPyFile("./spark_test/bloomfilters_util.py")
     sc.addPyFile(mmh3.__file__)
     
     broadcast_hash_function_number = sc.broadcast(util.compute_number_of_hash_functions(false_positive_prob))
