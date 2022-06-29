@@ -2,6 +2,7 @@ package it.unipi.hadoop.bloomfilter.tester;
 
 import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
+import it.unipi.hadoop.bloomfilter.writables.TesterResultsWritable;
 import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -22,17 +23,24 @@ import java.util.Arrays;
  *     <li>Array of position to check if set to 1 in the given bloom filter (IntArrayWritable)</li>
  * </ul></li>
  * <li>Output key: average rating (ByteWritable)</li>
- * <li>Output value: false positive probability (DoubleWritable)</li>
+ * <li>Output value: result of the tester (TesterResultsWritable)
+ *      <ul>
+ *          <li>Number of false positives (int)</li>
+ *          <li>Total number of test samples (int)</li>
+ *          <li>False positive probability</li>
+ *      </ul>
+ * </li>
  * </ul>
  */
 public class ReducerTester
-		extends Reducer<ByteWritable, TesterGenericWritable, ByteWritable, DoubleWritable>
+		extends Reducer<ByteWritable, TesterGenericWritable, ByteWritable, TesterResultsWritable>
 {
 	// Logger
 	private static final Logger LOGGER = LogManager.getLogger(ReducerTester.class);
 
-	// Value of the false positive probability
-	private final DoubleWritable SERIALIZABLE_FALSE_POSITIVE = new DoubleWritable();
+	// Result of tester execution
+	// (number of false positives, total number of test samples, false positive probability)
+	private final TesterResultsWritable testResults = new TesterResultsWritable();
 
 
 	@Override
@@ -63,7 +71,7 @@ public class ReducerTester
 		}
 
 		// Restore original state of iterable
-		double numberOfTests = 0, numberOfFalsePositives = 0;
+		int numberOfTests = 0, numberOfFalsePositives = 0;
 
 		// Get the intermediate results from the mapper
 		for (TesterGenericWritable object : values) {
@@ -108,12 +116,13 @@ public class ReducerTester
 
 		}
 
-		SERIALIZABLE_FALSE_POSITIVE.set(numberOfFalsePositives / numberOfTests);
-		context.write(key, SERIALIZABLE_FALSE_POSITIVE);
+		// Set the results of the reducer
+		testResults.set(numberOfFalsePositives, numberOfTests);
+		context.write(key, testResults);
 
 		LOGGER.debug("#tests = " + numberOfTests);
 		LOGGER.debug("#falsePositive = " + numberOfFalsePositives);
-		LOGGER.debug("key = " + key + ", false positive probability = " + SERIALIZABLE_FALSE_POSITIVE);
+		LOGGER.debug("key = " + key + ", false positive probability = " + testResults);
 	}
 
 }
