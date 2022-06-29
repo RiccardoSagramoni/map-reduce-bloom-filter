@@ -116,15 +116,15 @@ public class BloomFilterTester {
 		String[] otherArgs = new GenericOptionsParser(configuration, args).getRemainingArgs();
 		if (otherArgs.length < 5) {
 			System.err.println("Usage: BloomFilterTester <false positive p> <dataset file for testing> " +
-					"<file with the bloom filters> <output file> <linecount file>");
+					"<file with the bloom filters> <linecount file> <output file>");
 			System.exit(1);
 		}
 
 		double falsePositiveProbability = Double.parseDouble(otherArgs[0]);
 		Path input_dataset = new Path(otherArgs[1]);
 		Path output_bloom_filter = new Path(otherArgs[2]);
-		Path output_tester = new Path(otherArgs[3]);
-		Path linecount_output = new Path(otherArgs[4]);
+		Path linecount_output = new Path(otherArgs[3]);
+		Path output_tester = new Path(otherArgs[4]);
 
 		// Compute the size of bloom filters
 		Map<Byte, Integer> sizeOfBloomFilters =

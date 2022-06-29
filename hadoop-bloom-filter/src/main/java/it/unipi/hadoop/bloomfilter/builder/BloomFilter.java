@@ -88,14 +88,14 @@ public class BloomFilter {
 		String[] otherArgs = new GenericOptionsParser(configuration, args).getRemainingArgs();
 		if (otherArgs.length < 4) {
 			System.err.println("Usage: BloomFilter <false positive p> <input file> " +
-					"<output file> <line count output file>");
+					"<line count output file> <output file>");
 			System.exit(2);
 		}
 
 		double falsePositiveProbability = Double.parseDouble(otherArgs[0]);
 		Path input_file = new Path(otherArgs[1]);
-		Path output_file = new Path(otherArgs[2]);
-		Path linecount_file = new Path(otherArgs[3]);
+		Path linecount_file = new Path(otherArgs[2]);
+		Path output_file = new Path(otherArgs[3]);
 
 		// Compute the size of bloom filters
 		Map<Byte, Integer> sizeOfBloomFilters =
