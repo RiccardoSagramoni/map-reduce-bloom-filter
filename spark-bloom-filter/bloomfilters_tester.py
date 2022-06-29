@@ -58,9 +58,10 @@ def main():
     false_positive_prob, dataset_input_file, bloom_filters_file, linecount_file, output_file = parse_arguments()
     
     sc = SparkContext(appName="BLOOM_FILTER_TESTER", master="yarn")
+    sc.setLogLevel("ERROR")
     
     # Add Python dependencies to Spark application
-    sc.addPyFile("./spark_test/bloomfilters_util.py")
+    sc.addPyFile("./bloomfilters_util.py")
     sc.addPyFile(mmh3.__file__)
     
     broadcast_hash_function_number = sc.broadcast(
