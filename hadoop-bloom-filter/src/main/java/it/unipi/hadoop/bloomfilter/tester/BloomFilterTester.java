@@ -57,7 +57,7 @@ public class BloomFilterTester {
 	{
 
 		// Create MapReduce job
-		Job job = Job.getInstance(configuration, "BloomFilter Tester");
+		Job job = Job.getInstance(configuration, "HADOOP_BLOOM_FILTERS_TESTER");
 		BloomFilterUtils.generateConfiguration(
 				job.getConfiguration(),
 				falsePositiveProbability,
@@ -115,7 +115,7 @@ public class BloomFilterTester {
 		Configuration configuration = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(configuration, args).getRemainingArgs();
 		if (otherArgs.length < 5) {
-			System.err.println("Usage: BloomFilterTester <false positive p> <dataset file for testing> " +
+			System.err.println("Required arguments: <false positive p> <dataset file for testing> " +
 					"<file with the bloom filters> <output file> <linecount file>");
 			System.exit(1);
 		}
@@ -142,7 +142,7 @@ public class BloomFilterTester {
 				sizeOfBloomFilters
 		);
 		if (!succeeded) {
-			System.err.println("BloomFilter Tester failed");
+			System.err.println("Bloom filters tester failed");
 			System.exit(1);
 		}
 	}

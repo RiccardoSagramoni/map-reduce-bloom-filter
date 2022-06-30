@@ -37,7 +37,7 @@ def check_false_positive(indexes: list, bloom_filter: list) -> int:
     for i in indexes:
         if not bloom_filter[i]:
             return 0
-
+    
     return 1
 
 
@@ -57,8 +57,8 @@ def sum_elem_lists(list1, list2):
 def main():
     false_positive_prob, dataset_input_file, bloom_filters_file, linecount_file, output_file = parse_arguments()
     
-    sc = SparkContext(appName="BLOOM_FILTER_TESTER", master="yarn")
-    sc.setLogLevel("ERROR")
+    sc = SparkContext(appName="SPARK_BLOOM_FILTERS_TESTER", master="yarn")
+    # sc.setLogLevel("ERROR")
     
     # Add Python dependencies to Spark application
     sc.addPyFile("./bloomfilters_util.py")
@@ -70,7 +70,7 @@ def main():
     broadcast_size_of_bloom_filters = sc.broadcast(
         util.get_size_of_bloom_filters(sc, linecount_file, false_positive_prob)
     )
-
+    
     print()
     print("Number of hash functions: " + str(broadcast_hash_function_number.value))
     print("Size of bloom filters: " + str(broadcast_size_of_bloom_filters.value))
@@ -78,7 +78,6 @@ def main():
     
     # Read bloom filters from the output file of the builder and distribute to the worker nodes
     bloom_filters = sc.broadcast(dict(sc.pickleFile(bloom_filters_file).collect()))
-    # print(bloom_filters.value)
     
     """
         1. read tester dataset
@@ -92,7 +91,7 @@ def main():
     """
     data = sc.textFile(dataset_input_file) \
         .map(lambda line: line.split('\t')[0:2]) \
-        .map(lambda split_line: (int(round(float(split_line[1]))),
+        .map(lambda split_line: (round(float(split_line[1])),
                                  util.compute_hashes(split_line,
                                                      broadcast_size_of_bloom_filters.value,
                                                      broadcast_hash_function_number.value
@@ -100,16 +99,21 @@ def main():
                                  )
              ) \
         .map(lambda rating_indexes: (rating_indexes[0],
-                                     [check_false_positive(rating_indexes[1], bloom_filters.value[rating_indexes[0]]),
-                                      1])
+                                     [check_false_positive(rating_indexes[1],
+                                                           bloom_filters.value[rating_indexes[0]]),
+                                      1]
+                                     )
              ) \
         .reduceByKey(sum_elem_lists) \
-        .map(lambda rating_counters: (rating_counters[0], (rating_counters[1][0], rating_counters[1][1],
-                                                           rating_counters[1][0] / rating_counters[1][1])))
-
+        .map(lambda rating_counters: (rating_counters[0], (rating_counters[1][0],
+                                                           rating_counters[1][1],
+                                                           rating_counters[1][0] / rating_counters[1][1])
+                                      )
+             )
+    
     data.saveAsTextFile(output_file)
-
-    print(data.collect())
+    
+    print("\nResults:\n" + data.collect())
     
     print("\n\nBLOOM FILTERS TESTER COMPLETED\n\n")
 

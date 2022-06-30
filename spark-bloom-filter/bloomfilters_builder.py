@@ -52,8 +52,8 @@ def extend_list(list1: list, list2: list) -> list:
 def main():
     false_positive_prob, dataset_input_file, linecount_file, output_file = parse_arguments()
     
-    sc = SparkContext(appName="BLOOM_FILTER", master="yarn")
-    sc.setLogLevel("ERROR")
+    sc = SparkContext(appName="SPARK_BLOOM_FILTERS_BUILDER", master="yarn")
+    # sc.setLogLevel("ERROR")
     
     # Add Python dependencies to Spark application
     sc.addPyFile("./bloomfilters_util.py")
