@@ -39,8 +39,10 @@ def generate_bloom_filter(indexes_to_set: list, size: int) -> list:
 def extend_list(list1: list, list2: list) -> list:
     """
         Concat the second list to the first one and return the first one
+
         :param list1: first list
         :param list2: second list
+
         :return: merged list
     """
     list1.extend(list2)
@@ -50,10 +52,11 @@ def extend_list(list1: list, list2: list) -> list:
 def main():
     false_positive_prob, dataset_input_file, linecount_file, output_file = parse_arguments()
     
-    sc = SparkContext(appName="BLOOM_FILTER", master="yarn")
+    sc = SparkContext(appName="SPARK_BLOOM_FILTERS_BUILDER", master="yarn")
+    # sc.setLogLevel("ERROR")
     
     # Add Python dependencies to Spark application
-    sc.addPyFile("bloomfilters_util.py")
+    sc.addPyFile("./bloomfilters_util.py")
     sc.addPyFile(mmh3.__file__)
     
     broadcast_hash_function_number = sc.broadcast(util.compute_number_of_hash_functions(false_positive_prob))

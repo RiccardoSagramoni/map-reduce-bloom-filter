@@ -45,7 +45,7 @@ public class BloomFilter {
 			throws IOException, ClassNotFoundException, InterruptedException
 	{
 		// Creation of MapReduce job
-		Job job = Job.getInstance(configuration, "BloomFilter");
+		Job job = Job.getInstance(configuration, "HADOOP_BLOOM_FILTERS_BUILDER");
 
 		BloomFilterUtils.generateConfiguration(job.getConfiguration(), falsePositiveProbability, sizeOfBloomFilters);
 
@@ -87,7 +87,7 @@ public class BloomFilter {
 		// Parse application arguments
 		String[] otherArgs = new GenericOptionsParser(configuration, args).getRemainingArgs();
 		if (otherArgs.length < 4) {
-			System.err.println("Usage: BloomFilter <false positive p> <input file> " +
+			System.err.println("Required arguments: <false positive percentage> <input file> " +
 					"<output file> <line count output file>");
 			System.exit(2);
 		}
@@ -114,7 +114,7 @@ public class BloomFilter {
 				sizeOfBloomFilters
 		);
 		if (!succeededJob) {
-			System.err.println("BloomFilter failed");
+			System.err.println("Bloom filters builder failed");
 			System.exit(1);
 		}
 	}

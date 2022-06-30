@@ -22,48 +22,46 @@ def parse_arguments():
            args.output_file
 
 
-def generate_bloom_filter(indexes_to_set: list, size: int) -> list:
+def check_false_positive(indexes: list, bloom_filter: list) -> int:
     """
-    Set to True the corresponding item of the Bloom Filter
+    Iterate the array of the hash values (i.e. the position indexes in the bloom filter)
+    to check the current value.
+    If at least one value is not set, then the sample is not a false positive
 
-    :param indexes_to_set: list of indexes to set True (computed through hash functions)
-    :param size: size of the bloom filter
+    :param indexes: list of indexes to check if set to True in the bloom filter
+    :param bloom_filter: list of a bloom filter created in the builder
 
-    :return: the Bloom filters structure
+    :return: 1 or 0 if the movie to check is a false positive (1) or not (0)
     """
-    bloom_filter = [False for _ in range(size)]
-    
-    for i in indexes_to_set:
-        bloom_filter[i] = True
-    
-    return bloom_filter
-
-
-def check_false_positive(rating: int, indexes: list, bloom_filters: dict) -> int:
-    """
-    TODO
-    :param rating:
-    :param indexes:
-    :param bloom_filters:
-    :return:
-    """
-    is_false_positive = 1
     
     for i in indexes:
-        if not bloom_filters[rating][i]:
-            is_false_positive = 0
-            break
+        if not bloom_filter[i]:
+            return 0
     
-    return is_false_positive
+    return 1
+
+
+def sum_elem_lists(list1, list2):
+    """
+    Sum each element of the second list to the respective element of the first list
+
+    :param list1: first list
+    :param list2: second list
+
+    :return: computed list
+    """
+    list1 = [x + y for x, y in zip(list1, list2)]
+    return list1
 
 
 def main():
     false_positive_prob, dataset_input_file, bloom_filters_file, linecount_file, output_file = parse_arguments()
     
-    sc = SparkContext(appName="BLOOM_FILTER_TESTER", master="yarn")
+    sc = SparkContext(appName="SPARK_BLOOM_FILTERS_TESTER", master="yarn")
+    # sc.setLogLevel("ERROR")
     
     # Add Python dependencies to Spark application
-    sc.addPyFile("bloomfilters_util.py")
+    sc.addPyFile("./bloomfilters_util.py")
     sc.addPyFile(mmh3.__file__)
     
     broadcast_hash_function_number = sc.broadcast(
@@ -72,7 +70,7 @@ def main():
     broadcast_size_of_bloom_filters = sc.broadcast(
         util.get_size_of_bloom_filters(sc, linecount_file, false_positive_prob)
     )
-
+    
     print()
     print("Number of hash functions: " + str(broadcast_hash_function_number.value))
     print("Size of bloom filters: " + str(broadcast_size_of_bloom_filters.value))
@@ -80,40 +78,42 @@ def main():
     
     # Read bloom filters from the output file of the builder and distribute to the worker nodes
     bloom_filters = sc.broadcast(dict(sc.pickleFile(bloom_filters_file).collect()))
-    print(bloom_filters.value)
     
     """
-    TODO
-        1. read dataset
+        1. read tester dataset
         2. map: split each line to extract [movieId, averageRating]
         3. map: round averageRating to the closest integer and output the array of hashes of the movie's id
-        4. reduceByKey: group by rating and merge the `indexes to set` (computed in the previous step)
-                        without duplicates
-        5. map: take (rating, [hashes]) and create the bloom filter setting to True the corresponding item of the array
-        6. save the results (the Bloom Filter) as a pickle file
+        4. map: check if the movie is a false positive and count the iteration (rating, [false_positive, 1])
+        5. reduceByKey: group by rating and perform an element-wise addition to compute the number of false positive 
+                        and the total number of movie tested
+        6. map: take (rating, [#false_positive, #movies]) and compute the false positive percentage
+        7. save the results (rating, [#false_positive, #movies, %false_positive]) as a text file
     """
-    lines = sc.textFile(dataset_input_file) \
-        .map(lambda line: line.split('\t')[0:2])
-    
-    l = lines.map(lambda x: (int(round(float(x[0]))), 1)) \
-        .reduceByKey(lambda x, y: x + y) \
-        .collect()
-    
-    broadcast_line_count = sc.broadcast(dict(l))
-    
-    lines.map(lambda split_line: (int(round(float(split_line[1]))),
-                                  util.compute_hashes(split_line,
-                                                      broadcast_size_of_bloom_filters.value,
-                                                      broadcast_hash_function_number.value
-                                                      )
-                                  )
-              ) \
-        .map(lambda rating_indexes: (rating_indexes[0],
-                                     check_false_positive(rating_indexes[0], rating_indexes[1], bloom_filters))
+    data = sc.textFile(dataset_input_file) \
+        .map(lambda line: line.split('\t')[0:2]) \
+        .map(lambda split_line: (round(float(split_line[1])),
+                                 util.compute_hashes(split_line,
+                                                     broadcast_size_of_bloom_filters.value,
+                                                     broadcast_hash_function_number.value
+                                                     )
+                                 )
              ) \
-        .reduceByKey(lambda x, y: x + y) \
-        .map(lambda x: (x[0], (x[1], broadcast_line_count.value[x[0]], x[1] / broadcast_line_count.value[x[0]]))) \
-        .saveAsTextFile(output_file)
+        .map(lambda rating_indexes: (rating_indexes[0],
+                                     [check_false_positive(rating_indexes[1],
+                                                           bloom_filters.value[rating_indexes[0]]),
+                                      1]
+                                     )
+             ) \
+        .reduceByKey(sum_elem_lists) \
+        .map(lambda rating_counters: (rating_counters[0], (rating_counters[1][0],
+                                                           rating_counters[1][1],
+                                                           rating_counters[1][0] / rating_counters[1][1])
+                                      )
+             )
+    
+    data.saveAsTextFile(output_file)
+    
+    print("\nResults:\n" + data.collect())
     
     print("\n\nBLOOM FILTERS TESTER COMPLETED\n\n")
 
