@@ -173,7 +173,6 @@ public class BloomFilterUtils {
 
 		}
 
-		System.out.println("Bloom filter input data = " + sizeOfBloomFilters);
 		return sizeOfBloomFilters;
 	}
 
