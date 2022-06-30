@@ -18,7 +18,7 @@ hadoop fs -rm -r $OUTPUT_TEST
 # Launch tester for bloom filters
 cd $FOLDER
 hadoop jar $JAR it.unipi.hadoop.bloomfilter.tester.BloomFilterTester \
-$false_positive_probability $TEST_DATASET $OUTPUT_BLOOMFILTERS $OUTPUT_TEST $LINECOUNT 
+$false_positive_probability $TEST_DATASET $OUTPUT_BLOOMFILTERS $LINECOUNT $OUTPUT_TEST
 cd -
 
 echo ""
