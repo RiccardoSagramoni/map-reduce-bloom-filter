@@ -1,10 +1,11 @@
 import argparse
-import bloomfilters_util as util
 import mmh3
 from pyspark import SparkContext
 
+import bloomfilters_util as util
 
-def parse_arguments():
+
+def parse_arguments() -> tuple[float, str, str, str, str]:
     """
     Parse the command line input arguments
     :return: parsed arguments
@@ -41,7 +42,7 @@ def check_false_positive(indexes: list, bloom_filter: list) -> int:
     return 1
 
 
-def sum_elem_lists(list1, list2):
+def sum_elem_lists(list1: list, list2: list) -> list:
     """
     Sum each element of the second list to the respective element of the first list
 

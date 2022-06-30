@@ -3,14 +3,14 @@
 	whereas the other is used to test the bloom filters (test)
 """
 
-from pyspark import SparkContext
 import argparse
+from pyspark import SparkContext
 
 # Approximate portion of dataset chosen for building the bloom filters
 TRAINING_DATASET_PORTION = 0.6
 
 
-def parse_arguments():
+def parse_arguments() -> str:
 	parser = argparse.ArgumentParser()
 	parser.add_argument('filename', type=str, help='name of the input file inside the `data` folder')
 	args = parser.parse_args()

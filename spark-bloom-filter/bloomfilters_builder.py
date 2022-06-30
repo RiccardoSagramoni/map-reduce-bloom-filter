@@ -1,7 +1,8 @@
 import argparse
-import bloomfilters_util as util
 import mmh3
 from pyspark import SparkContext
+
+import bloomfilters_util as util
 
 
 def parse_arguments():

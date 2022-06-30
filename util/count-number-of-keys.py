@@ -3,11 +3,11 @@
 	in order to correctly estimate the size of the bloom filters
 """
 
-from pyspark import SparkContext
 import argparse
+from pyspark import SparkContext
 
 
-def parse_arguments():
+def parse_arguments() -> tuple[str, str]:
 	parser = argparse.ArgumentParser()
 	parser.add_argument('input_file', type=str, help='path of the input file')
 	parser.add_argument('output_file', type=str, help='path of the output file')
@@ -32,7 +32,7 @@ def main():
 	"""
 	sc.textFile(input_file) \
 		.map(lambda line: line.split('\t')[1]) \
-		.map(lambda rating: (int(round(float(rating))), 1)) \
+		.map(lambda rating: (round(float(rating)), 1)) \
 		.reduceByKey(lambda value_1, value_2: value_1 + value_2) \
 		.map(lambda rating_count_pair: "{0}\t{1}".format(rating_count_pair[0], rating_count_pair[1])) \
 		.saveAsTextFile(output_file)
