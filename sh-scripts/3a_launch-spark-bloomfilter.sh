@@ -3,10 +3,10 @@
 # Declare variable for scripts
 TRAIN_DATASET="data/train_imdb.tsv"
 LINECOUNT="data/linecount"
-OUTPUT_BLOOMFILTERS="hadoop-output/bloomfilters"
+OUTPUT_BLOOMFILTERS="spark-output/bloomfilters"
 
-FOLDER="hadoop/"
-JAR="bloom-filter-1.0-SNAPSHOT.jar"
+FOLDER="spark/"
+PYFILE="bloomfilters_builder.py"
 
 false_positive_probability="0.2"
 
@@ -17,7 +17,7 @@ hadoop fs -rm -r $OUTPUT_BLOOMFILTERS
 
 # Launch builder of bloom filters
 cd $FOLDER
-hadoop jar $JAR it.unipi.hadoop.bloomfilter.builder.BloomFilter \
+spark-submit --master yarn $PYFILE \
 $false_positive_probability $TRAIN_DATASET $LINECOUNT $OUTPUT_BLOOMFILTERS
 cd -
 
