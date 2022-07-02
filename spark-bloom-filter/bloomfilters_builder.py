@@ -54,7 +54,7 @@ def main():
     false_positive_prob, dataset_input_file, linecount_file, output_file = parse_arguments()
     
     sc = SparkContext(appName="SPARK_BLOOM_FILTERS_BUILDER", master="yarn")
-    sc.setLogLevel("ERROR")
+    sc.setLogLevel("WARN")
     
     # Add Python dependencies to Spark application
     sc.addPyFile("./bloomfilters_util.py")
@@ -81,7 +81,7 @@ def main():
         4. map: take (rating, [indexes]) and create the bloom filter setting to True the corresponding item of the list
         5. save the results (the bloom filter) as a pickle file
     """
-    sc.textFile(dataset_input_file) \
+    sc.textFile(dataset_input_file, 4) \
         .map(lambda line:
              util.create_pair_rating_indexes(line,
                                              broadcast_size_of_bloom_filters.value,

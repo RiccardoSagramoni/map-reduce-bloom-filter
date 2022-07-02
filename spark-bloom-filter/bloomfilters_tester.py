@@ -58,7 +58,7 @@ def main():
     false_positive_prob, dataset_input_file, bloom_filters_file, linecount_file, output_file = parse_arguments()
     
     sc = SparkContext(appName="SPARK_BLOOM_FILTERS_TESTER", master="yarn")
-    sc.setLogLevel("ERROR")
+    sc.setLogLevel("WARN")
     
     # Add Python dependencies to Spark application
     sc.addPyFile("./bloomfilters_util.py")
@@ -91,7 +91,7 @@ def main():
         5. map: take (rating, [#false_positive, #movies]) and compute the false positive percentage
         6. save the results (rating, [#false_positive, #movies, %false_positive]) as a text file
     """
-    sc.textFile(dataset_input_file) \
+    sc.textFile(dataset_input_file, 4) \
         .map(lambda line:
              util.create_pair_rating_indexes(line,
                                              broadcast_size_of_bloom_filters.value,
