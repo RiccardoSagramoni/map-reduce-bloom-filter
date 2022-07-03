@@ -3,25 +3,6 @@ import mmh3
 from pyspark import SparkContext
 
 
-def compute_hashes(line: str, size_of_bloom_filters: dict, hash_function_number: int) -> list:
-    """
-    Compute the hash values of a movie (MurmurHash functions applied using different seeds)
-    
-    :param line: single line of the dataset in the format [movieId, averageRating]
-    :param size_of_bloom_filters: dict with the size of each bloom filter
-    :param hash_function_number: how many hash functions must be used
-    
-    :return: array of computed hash values
-    """
-    # Parse line
-    movie_id = line[0]
-    rating = round(float(line[1]))
-    # Get bloom filter size
-    bloom_filter_size = size_of_bloom_filters[rating]
-    # Compute hash values
-    return [mmh3.hash(movie_id, i) % bloom_filter_size for i in range(hash_function_number)]
-
-
 def compute_number_of_hash_functions(false_positive_prob: float) -> int:
     """
     Compute how many hash functions are required for the bloom filter
@@ -73,3 +54,48 @@ def get_size_of_bloom_filters(sc: SparkContext, linecount_file: str, false_posit
     
     # Convert the list of tuples into a dictionary
     return dict(size_of_bf_list)
+
+
+def compute_indexes_to_set(movie_id: str, rating: int, size_of_bloom_filters: dict, hash_function_number: int) -> list:
+    """
+    Get the indexes to set in a bloom filter by computing hash values of a movie (MurmurHash functions applied using
+    different seeds)
+
+    :param movie_id: id of the movie
+    :param rating: rating of the movie (= key of the bloom filter)
+    :param size_of_bloom_filters: dict with the size of each bloom filter
+    :param hash_function_number: how many hash functions must be used
+
+    :return: array with the indexes to set
+    """
+    # Get bloom filter size
+    bloom_filter_size = size_of_bloom_filters[rating]
+    # Compute hash values
+    return [mmh3.hash(movie_id, i) % bloom_filter_size for i in range(hash_function_number)]
+
+
+def create_pair_rating_indexes(line: str, size_of_bloom_filters: dict, hash_function_number: int) -> tuple[int, list]:
+    """
+    Given a line from the dataset, it does the following actions:
+        - Extract the `movie id` and `rating` from the line
+        - Compute the hash values of `movie id`
+        - Compute the modulo of the hash values in order to identify the indexes to set in the bloom filter
+        - Return a tuple with rating (which is the key of the bloom filter) and the indexes to set
+    
+    :param line: line extracted from the database
+    :param size_of_bloom_filters: dictionary with the size of the bloom filter (value) for each rating value (key)
+    :param hash_function_number: how many hash functions must be used
+    :return:
+    """
+    # Split line and parse arguments
+    split_line = line.split('\t')[0:2]
+    movie_id = split_line[0]
+    rating = round(float(split_line[1]))
+    
+    return (
+        rating,
+        compute_indexes_to_set(movie_id,
+                               rating,
+                               size_of_bloom_filters,
+                               hash_function_number)
+    )
