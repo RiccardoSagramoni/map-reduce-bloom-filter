@@ -4,8 +4,7 @@ public enum BloomFilterConfigurationName {
     NUMBER("bloom.filter.number"),
     RATING_KEY("bloom.filter.size.key"),
     SIZE_VALUE("bloom.filter.size.value"),
-    NUMBER_HASH("bloom.filter.hash"),
-    LINES_PER_MAP("mapreduce.input.lineinputformat.linespermap");
+    NUMBER_HASH("bloom.filter.hash");
 
     private final String label;
 

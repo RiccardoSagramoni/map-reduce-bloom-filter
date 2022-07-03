@@ -2,7 +2,6 @@
 	Split the IMDB dataset into two partition: one is used to build the bloom filters (training),
 	whereas the other is used to test the bloom filters (test)
 """
-
 import argparse
 from pyspark import SparkContext
 

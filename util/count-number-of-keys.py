@@ -2,12 +2,12 @@
 	For each rating, count how many occurrences exist in the dataset,
 	in order to correctly estimate the size of the bloom filters
 """
-
 import argparse
 from pyspark import SparkContext
+from typing import Tuple
 
 
-def parse_arguments() -> tuple[str, str]:
+def parse_arguments() -> Tuple[str, str]:
 	parser = argparse.ArgumentParser()
 	parser.add_argument('input_file', type=str, help='path of the input file')
 	parser.add_argument('output_file', type=str, help='path of the output file')

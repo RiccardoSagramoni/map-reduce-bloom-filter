@@ -1,6 +1,7 @@
 import math
 import mmh3
 from pyspark import SparkContext
+from typing import Tuple
 
 
 def compute_number_of_hash_functions(false_positive_prob: float) -> int:
@@ -74,7 +75,7 @@ def compute_indexes_to_set(movie_id: str, rating: int, size_of_bloom_filters: di
     return [mmh3.hash(movie_id, i) % bloom_filter_size for i in range(hash_function_number)]
 
 
-def create_pair_rating_indexes(line: str, size_of_bloom_filters: dict, hash_function_number: int) -> tuple[int, list]:
+def create_pair_rating_indexes(line: str, size_of_bloom_filters: dict, hash_function_number: int) -> Tuple[int, list]:
     """
     Given a line from the dataset, it does the following actions:
         - Extract the `movie id` and `rating` from the line

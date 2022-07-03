@@ -1,6 +1,5 @@
 package it.unipi.hadoop.bloomfilter.tester;
 
-import it.unipi.hadoop.bloomfilter.util.BloomFilterConfigurationName;
 import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
 import it.unipi.hadoop.bloomfilter.util.MapReduceParameters;
 import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
@@ -75,8 +74,8 @@ public class BloomFilterTester {
 				NLineInputFormat.class,
 				MapperTesterForHashValues.class // Reuse mapper for building bloom filter
 		);
-		job.getConfiguration().setInt(
-				BloomFilterConfigurationName.LINES_PER_MAP.toString(),
+		NLineInputFormat.setNumLinesPerSplit(
+				job,
 				MapReduceParameters.getInstance().getLinesPerMapTester()
 		);
 

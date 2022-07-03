@@ -4,18 +4,28 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+/**
+ * Singleton class on charge of reading configuration parameters
+ * from file for the MapReduce jobs
+ */
 public class MapReduceParameters {
 
+	// Path of the properties file
 	private static final String PATH = "./bloom-filter.properties";
+	// Singleton instance
 	private static MapReduceParameters instance = null;
 
+	// Parameters
 	private final int numberOfReducersBuilder;
 	private final int numberOfReducersTester;
 	private final int linesPerMapBuilder;
 	private final int linesPerMapTester;
 
 
-
+	/**
+	 * Get the instance of this class
+	 * @return singleton instance of this class
+	 */
 	public static MapReduceParameters getInstance() throws IOException {
 		if (instance == null) {
 			instance = new MapReduceParameters();
@@ -24,7 +34,9 @@ public class MapReduceParameters {
 	}
 
 
-
+	/**
+	 * Read the application's properties and initialize the appropriate class fields
+	 */
 	private MapReduceParameters () throws IOException {
 		// Load application's properties
 		Properties properties = new Properties();
