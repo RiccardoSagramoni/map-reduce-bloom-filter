@@ -91,7 +91,7 @@ def create_pair_rating_indexes(line: str, size_of_bloom_filters: dict, hash_func
     # Split line and parse arguments
     split_line = line.split('\t')[0:2]
     movie_id = split_line[0]
-    rating = round(float(split_line[1]))
+    rating = int(float(split_line[1]) + 0.5)  # round() is bugged in Python 3.6!!!
     
     return (
         rating,

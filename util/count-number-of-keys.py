@@ -32,7 +32,7 @@ def main():
 	"""
 	sc.textFile(input_file) \
 		.map(lambda line: line.split('\t')[1]) \
-		.map(lambda rating: (round(float(rating)), 1)) \
+		.map(lambda rating: (int(float(rating) + 0.5), 1)) \
 		.reduceByKey(lambda value_1, value_2: value_1 + value_2) \
 		.map(lambda rating_count_pair: "{0}\t{1}".format(rating_count_pair[0], rating_count_pair[1])) \
 		.saveAsTextFile(output_file)
