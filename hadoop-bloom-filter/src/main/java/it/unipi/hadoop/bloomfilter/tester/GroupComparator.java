@@ -5,7 +5,7 @@ import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 
 /**
- * Comparator for sorting naturally only the rating key of the composite key
+ * Comparator for sorting naturally only by the rating field of the composite key
  */
 class GroupComparator extends WritableComparator {
     protected GroupComparator() {

@@ -3,16 +3,15 @@ package it.unipi.hadoop.bloomfilter.tester;
 import it.unipi.hadoop.bloomfilter.tester.writables.IntermediateKeyWritable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 
 /**
  * Comparator for the Secondary Sort of the key in order to sort the composite key (rating, isBloomFilter):
  * <ul>
- *     <li>natural order for the rating_key</li>
- *     <li>reverse order for the second key field</li>
+ *     <li>natural order for the rating field</li>
+ *     <li>reverse order for the isBloomFilter field</li>
  * </ul>
- * The second part of the key is a boolean variable indicating whether it is the bloom filter or the indexes array
+ * The second part of the key is a boolean variable indicating whether it is the bloom filter (true) or the array of
+ * indexes to set (false).
  */
 class KeyComparator extends WritableComparator {
 

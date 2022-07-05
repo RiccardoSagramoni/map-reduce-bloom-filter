@@ -14,9 +14,15 @@ import java.io.IOException;
  */
 public class IntermediateKeyWritable implements WritableComparable<IntermediateKeyWritable> {
 
+	// Actual key (rating of the movies)
 	private Byte rating;
+
+	// Boolean flag for the corresponding value:
+	// true if the value is a bloom filter,
+	// false if it's the array of indexes to set
 	private Boolean isBloomFilter;
 
+	
 	public IntermediateKeyWritable() {
 		rating = null;
 		isBloomFilter = null;
