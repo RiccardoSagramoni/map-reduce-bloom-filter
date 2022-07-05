@@ -21,7 +21,7 @@ import java.util.Map;
  * <li>Output value: bloom filter structure (BooleanArrayWritable)</li>
  * </ul>
  */
-public class BloomFilterReducer
+class BloomFilterReducer
 		extends Reducer<ByteWritable, IntArrayWritable, ByteWritable, BooleanArrayWritable>
 {
 	// Logger

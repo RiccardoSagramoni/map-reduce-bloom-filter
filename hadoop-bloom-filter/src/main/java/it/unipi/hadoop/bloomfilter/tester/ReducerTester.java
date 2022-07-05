@@ -1,9 +1,9 @@
 package it.unipi.hadoop.bloomfilter.tester;
 
-import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
-import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
-import it.unipi.hadoop.bloomfilter.writables.TesterResultsWritable;
-import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
+import it.unipi.hadoop.bloomfilter.tester.writables.IntermediateKeyWritable;
+import it.unipi.hadoop.bloomfilter.tester.writables.TesterGenericWritable;
+import it.unipi.hadoop.bloomfilter.tester.writables.TesterResultsWritable;
+import it.unipi.hadoop.bloomfilter.writables.*;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.log4j.LogManager;
@@ -32,11 +32,13 @@ import java.util.Arrays;
  * </li>
  * </ul>
  */
-public class ReducerTester
-		extends Reducer<ByteWritable, TesterGenericWritable, ByteWritable, TesterResultsWritable>
+class ReducerTester
+		extends Reducer<IntermediateKeyWritable, TesterGenericWritable, ByteWritable, TesterResultsWritable>
 {
 	// Logger
 	private static final Logger LOGGER = LogManager.getLogger(ReducerTester.class);
+
+	private final ByteWritable outputKey = new ByteWritable();
 
 	// Result of tester execution
 	// (number of false positives, total number of test samples, false positive probability)
@@ -44,41 +46,30 @@ public class ReducerTester
 
 
 	@Override
-	public void reduce (ByteWritable key, Iterable<TesterGenericWritable> values, Context context)
+	public void reduce (IntermediateKeyWritable key, Iterable<TesterGenericWritable> values, Context context)
 			throws IOException, InterruptedException
 	{
 		LOGGER.debug("Reducer key = " + key);
 
-		// Declare the bloomFilter
-		BooleanWritable[] bloomFilter = null;
-
 		// Get the bloom filter from the input values
-		for (TesterGenericWritable object : values) {
-			if (object.get() instanceof BooleanArrayWritable) {
-				BooleanArrayWritable booleanArrayWritable = (BooleanArrayWritable) object.get();
-				bloomFilter = (BooleanWritable[]) booleanArrayWritable.toArray();
-
-				LOGGER.debug("bloomFilter = " + Arrays.toString(bloomFilter));
-				LOGGER.debug("bloomFilter length = " + bloomFilter.length);
-				break;
-			}
-		}
-
-		// Check if bloom filter was founded
-		if (bloomFilter == null) {
+		TesterGenericWritable wrappedBloomFilter = values.iterator().next();
+		if (!(wrappedBloomFilter.get() instanceof BooleanArrayWritable)) {
 			LOGGER.error("BloomFilter " + key + " doesn't exist");
 			return;
 		}
 
-		// Restore original state of iterable
+		BooleanWritable[] bloomFilter = (BooleanWritable[])
+						( (BooleanArrayWritable) wrappedBloomFilter.get() )
+						.toArray();
+
+		LOGGER.debug("bloomFilter = " + Arrays.toString(bloomFilter));
+		LOGGER.debug("bloomFilter length = " + bloomFilter.length);
+
+
 		int numberOfTests = 0, numberOfFalsePositives = 0;
 
 		// Get the intermediate results from the mapper
 		for (TesterGenericWritable object : values) {
-			// Skip the bloom filter
-			if (object.get() instanceof BooleanArrayWritable) {
-				continue;
-			}
 
 			// Convert to array of IntWritable (the outputs of the hash functions)
 			IntWritable[] intArray = (IntWritable[]) ( (IntArrayWritable)object.get() ).toArray();
@@ -117,8 +108,9 @@ public class ReducerTester
 		}
 
 		// Set the results of the reducer
+		outputKey.set(key.getRating());
 		testResults.set(numberOfFalsePositives, numberOfTests);
-		context.write(key, testResults);
+		context.write(outputKey, testResults);
 
 		LOGGER.debug("#tests = " + numberOfTests);
 		LOGGER.debug("#falsePositive = " + numberOfFalsePositives);

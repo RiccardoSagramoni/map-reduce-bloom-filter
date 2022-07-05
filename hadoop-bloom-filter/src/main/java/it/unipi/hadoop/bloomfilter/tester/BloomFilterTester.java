@@ -1,13 +1,13 @@
 package it.unipi.hadoop.bloomfilter.tester;
 
+import it.unipi.hadoop.bloomfilter.tester.writables.IntermediateKeyWritable;
 import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
 import it.unipi.hadoop.bloomfilter.util.MapReduceParameters;
-import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
+import it.unipi.hadoop.bloomfilter.tester.writables.TesterGenericWritable;
+import it.unipi.hadoop.bloomfilter.tester.writables.TesterResultsWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ByteWritable;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
 import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
@@ -88,14 +88,19 @@ public class BloomFilterTester {
 		);
 
 		// Configure output key/value for mappers
-		job.setMapOutputKeyClass(ByteWritable.class);
+		job.setMapOutputKeyClass(IntermediateKeyWritable.class);
 		job.setMapOutputValueClass(TesterGenericWritable.class);
+
+		// Configure partitioner and comparators
+		job.setPartitionerClass(PartitionerTester.class);
+		job.setSortComparatorClass(KeyComparator.class);
+		job.setGroupingComparatorClass(GroupComparator.class);
 
 
 		// Configure reducer
 		job.setReducerClass(ReducerTester.class);
-		job.setOutputKeyClass(IntWritable.class);
-		job.setOutputValueClass(DoubleWritable.class);
+		job.setOutputKeyClass(ByteWritable.class);
+		job.setOutputValueClass(TesterResultsWritable.class);
 		job.setNumReduceTasks(MapReduceParameters.getInstance().getNumberOfReducersTester());
 
 
@@ -120,16 +125,16 @@ public class BloomFilterTester {
 		}
 
 		double falsePositiveProbability = Double.parseDouble(otherArgs[0]);
-		Path input_dataset = new Path(otherArgs[1]);
-		Path output_bloom_filter = new Path(otherArgs[2]);
-		Path linecount_output = new Path(otherArgs[3]);
-		Path output_tester = new Path(otherArgs[4]);
+		Path testDatasetPath = new Path(otherArgs[1]);
+		Path bloomFiltersPath = new Path(otherArgs[2]);
+		Path linecountPath = new Path(otherArgs[3]);
+		Path outputPath = new Path(otherArgs[4]);
 
 		// Compute the size of bloom filters
 		Map<Byte, Integer> sizeOfBloomFilters =
 				BloomFilterUtils.getBloomFiltersSizeParameters(
 						configuration,
-						linecount_output,
+						linecountPath,
 						falsePositiveProbability
 				);
 
@@ -137,7 +142,7 @@ public class BloomFilterTester {
 		boolean succeeded = runBloomFilterTester(
 				configuration,
 				falsePositiveProbability,
-				input_dataset, output_bloom_filter, output_tester,
+				testDatasetPath, bloomFiltersPath, outputPath,
 				sizeOfBloomFilters
 		);
 		if (!succeeded) {

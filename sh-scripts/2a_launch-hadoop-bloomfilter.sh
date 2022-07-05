@@ -17,7 +17,7 @@ hadoop fs -rm -r $OUTPUT_BLOOMFILTERS
 
 # Launch builder of bloom filters
 cd $FOLDER
-hadoop jar $JAR it.unipi.hadoop.bloomfilter.builder.BloomFilter \
+hadoop jar $JAR it.unipi.hadoop.bloomfilter.builder.BloomFilterBuilder \
 $false_positive_probability $TRAIN_DATASET $LINECOUNT $OUTPUT_BLOOMFILTERS
 cd -
 

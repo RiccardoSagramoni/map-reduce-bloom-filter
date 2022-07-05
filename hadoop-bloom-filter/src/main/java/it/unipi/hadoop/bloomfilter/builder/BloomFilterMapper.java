@@ -25,7 +25,7 @@ import java.util.StringTokenizer;
  * <li>Output value: array with the hash values of the line (IntArrayWritable)</li>
  * </ul>
  */
-public class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, IntArrayWritable> {
+class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, IntArrayWritable> {
 	// Logger
 	private static final Logger LOGGER = LogManager.getLogger(BloomFilterMapper.class);
 

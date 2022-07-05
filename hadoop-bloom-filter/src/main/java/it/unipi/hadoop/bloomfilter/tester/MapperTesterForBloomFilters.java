@@ -1,7 +1,8 @@
 package it.unipi.hadoop.bloomfilter.tester;
 
+import it.unipi.hadoop.bloomfilter.tester.writables.IntermediateKeyWritable;
 import it.unipi.hadoop.bloomfilter.writables.BooleanArrayWritable;
-import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
+import it.unipi.hadoop.bloomfilter.tester.writables.TesterGenericWritable;
 import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.mapreduce.Mapper;
 
@@ -20,19 +21,22 @@ import java.io.IOException;
  * <li>Output value: bloom filter wrapped in a different structure (TesterGenericWritable)</li>
  * </ul>
  */
-public class MapperTesterForBloomFilters
-		extends Mapper<ByteWritable, BooleanArrayWritable, ByteWritable, TesterGenericWritable>
+class MapperTesterForBloomFilters
+		extends Mapper<ByteWritable, BooleanArrayWritable, IntermediateKeyWritable, TesterGenericWritable>
 {
+	// Output key (extracted bloom filter, TRUE)
+	private final IntermediateKeyWritable outputKey = new IntermediateKeyWritable();
 	// Generic wrapper for the bloom filter
-	private final TesterGenericWritable object = new TesterGenericWritable();
+	private final TesterGenericWritable outputValue = new TesterGenericWritable();
 
 	@Override
 	public void map (ByteWritable key, BooleanArrayWritable value, Context context)
 			throws IOException, InterruptedException
 	{
-		// Wrap the bloom filter and send it to the appropriate reducer task
-		object.set(value);
-		context.write(key, object);
+		// Wrap the key and the bloom filter and send it to the appropriate reducer task
+		outputKey.set(key.get(), true);
+		outputValue.set(value);
+		context.write(outputKey, this.outputValue);
 	}
 
 }

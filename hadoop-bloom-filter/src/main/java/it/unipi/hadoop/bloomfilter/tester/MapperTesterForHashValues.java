@@ -2,8 +2,9 @@ package it.unipi.hadoop.bloomfilter.tester;
 
 import it.unipi.hadoop.bloomfilter.util.BloomFilterConfigurationName;
 import it.unipi.hadoop.bloomfilter.util.BloomFilterUtils;
-import it.unipi.hadoop.bloomfilter.writables.TesterGenericWritable;
+import it.unipi.hadoop.bloomfilter.tester.writables.TesterGenericWritable;
 import it.unipi.hadoop.bloomfilter.writables.IntArrayWritable;
+import it.unipi.hadoop.bloomfilter.tester.writables.IntermediateKeyWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -27,24 +28,29 @@ import java.util.StringTokenizer;
  * <li>Output value: array with the hash values of the line (TesterGenericWritable)</li>
  * </ul>
  */
-public class MapperTesterForHashValues extends Mapper<LongWritable, Text, ByteWritable, TesterGenericWritable> {
+class MapperTesterForHashValues
+		extends Mapper<LongWritable, Text, IntermediateKeyWritable, TesterGenericWritable>
+{
 	// Logger
 	private static final Logger LOGGER = LogManager.getLogger(MapperTesterForHashValues.class);
+
+	// Instance of the hash function MURMUR_HASH
+	private final Hash hash = Hash.getInstance(Hash.MURMUR_HASH);
+
 
 	// Number of hash functions that must be applied
 	private int HASH_FUNCTIONS_NUMBER;
 	// Size of each bloom filter
 	private Map<Byte, Integer> BLOOM_FILTER_SIZE;
 
+
 	// Array of IntWritable for the output value of the mapper
 	private final IntArrayWritable hashArrayWritable = new IntArrayWritable();
+
+	// Output key (array of indexes to set, FALSE)
+	private final IntermediateKeyWritable outputKey = new IntermediateKeyWritable();
 	// Generic wrapper for the array of IntWritable hash values
 	private final TesterGenericWritable outputValue = new TesterGenericWritable();
-	// ByteWritable for the output key
-	private final ByteWritable outputKey = new ByteWritable();
-
-	// Instance of the hash function MURMUR_HASH
-	private final Hash hash = Hash.getInstance(Hash.MURMUR_HASH);
 
 
 
@@ -108,7 +114,7 @@ public class MapperTesterForHashValues extends Mapper<LongWritable, Text, ByteWr
 
 
 		// Setting the output values
-		outputKey.set(rating);
+		outputKey.set(rating, false);
 		hashArrayWritable.set(hashes);
 		// Wrap the hash values array and send it to the appropriate reducer task
 		outputValue.set(hashArrayWritable);

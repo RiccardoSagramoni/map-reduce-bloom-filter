@@ -1,4 +1,4 @@
-package it.unipi.hadoop.bloomfilter.writables;
+package it.unipi.hadoop.bloomfilter.tester.writables;
 
 import org.apache.hadoop.io.Writable;
 
@@ -6,6 +6,13 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+/**
+ * Writable which contains the results of the "tester" application, i.e. the tuple
+ * (false positive occurrences, total occurrences, false positive percentage).
+ * <br>
+ * The false positive percentage is automatically computed as the ratio between
+ * the false positive occurrences and the total occurrences.
+ */
 public class TesterResultsWritable implements Writable {
 
 	private int falsePositiveOccurrences;

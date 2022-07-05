@@ -20,12 +20,12 @@ import org.apache.hadoop.util.GenericOptionsParser;
  * from a given dataset.<br><br>
  * Use the following command to launch the application: <br>
  * <code>
- *     hadoop jar <i>application.jar</i> it.unipi.hadoop.bloomfilter.builder.BloomFilter
+ *     hadoop jar <i>application.jar</i> it.unipi.hadoop.bloomfilter.builder.BloomFilterBuilder
  *     	<i>&#60;false_positive_probability&#62;</i> <i>training_dataset_path</i>
  *     	<i>output_path</i> <i>linecount_output_path</i>
  * </code>
  */
-public class BloomFilter {
+public class BloomFilterBuilder {
 
 	/**
 	 * Run the MapReduce job for building the bloom filters
@@ -49,7 +49,7 @@ public class BloomFilter {
 		BloomFilterUtils.generateConfiguration(job.getConfiguration(), falsePositiveProbability, sizeOfBloomFilters);
 
 		// Configure JAR
-		job.setJarByClass(BloomFilter.class);
+		job.setJarByClass(BloomFilterBuilder.class);
 
 		// Mapper configuration
 		job.setMapperClass(BloomFilterMapper.class);
