@@ -70,7 +70,11 @@ def compute_indexes_to_set(movie_id: str, rating: int, size_of_bloom_filters: di
     :return: array with the indexes to set
     """
     # Get bloom filter size
-    bloom_filter_size = size_of_bloom_filters[rating]
+    bloom_filter_size = size_of_bloom_filters.get(rating)
+    
+    if bloom_filter_size is None:
+        return []
+    
     # Compute hash values
     return [mmh3.hash(movie_id, i) % bloom_filter_size for i in range(hash_function_number)]
 
