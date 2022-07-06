@@ -86,7 +86,6 @@ class BloomFilterMapper extends Mapper<LongWritable, Text, ByteWritable, IntArra
 
 
 
-
 		Integer bloomFilterSize = BLOOM_FILTER_SIZE.get(rating);
 		if (bloomFilterSize == null) {
 			LOGGER.error("Rating key " + rating + " doesn't exist in linecount");
