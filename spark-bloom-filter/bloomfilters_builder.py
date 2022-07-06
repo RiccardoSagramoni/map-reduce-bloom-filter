@@ -30,6 +30,9 @@ def generate_bloom_filter(indexes_to_set: list, size: int) -> list:
     
     :return: the Bloom filters structure
     """
+    if size is None:
+        return []
+    
     bloom_filter = [False for _ in range(size)]
     
     for i in indexes_to_set:
@@ -91,7 +94,7 @@ def main():
         .map(lambda pair_rating_indexes:
                  (pair_rating_indexes[0],
                   generate_bloom_filter(pair_rating_indexes[1],
-                                        broadcast_size_of_bloom_filters.value[pair_rating_indexes[0]])
+                                        broadcast_size_of_bloom_filters.value.get(pair_rating_indexes[0]))
                   )
              ) \
         .saveAsPickleFile(output_file)
