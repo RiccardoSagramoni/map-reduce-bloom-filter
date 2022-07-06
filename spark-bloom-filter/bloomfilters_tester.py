@@ -78,7 +78,7 @@ def main():
     print()
     
     # Read bloom filters from the output file of the builder and distribute to the worker nodes
-    bloom_filters = sc.broadcast(dict(sc.pickleFile(bloom_filters_file).collect()))
+    broadcast_bloom_filters = sc.broadcast(dict(sc.pickleFile(bloom_filters_file).collect()))
     
     """
         1. read tester dataset
@@ -99,7 +99,7 @@ def main():
              ) \
         .map(lambda rating_indexes: (rating_indexes[0],
                                      [check_false_positive(rating_indexes[1],
-                                                           bloom_filters.value[rating_indexes[0]]),
+                                                           broadcast_bloom_filters.value[rating_indexes[0]]),
                                       1]
                                      )
              ) \
