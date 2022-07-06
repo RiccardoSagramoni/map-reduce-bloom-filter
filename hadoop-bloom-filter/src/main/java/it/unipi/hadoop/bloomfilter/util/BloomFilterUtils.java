@@ -58,9 +58,9 @@ public class BloomFilterUtils {
 
 
 	/**
-	 * TODO
+	 * Read the configuration for each bloom filter and create the key-value pairs (rating, size)
 	 * @param configuration configuration of MapReduce job
-	 * @return map with the size of the corresponding bloom filter for each rating value
+	 * @return map structure with the size of the corresponding bloom filter for each rating value
 	 */
 	public static Map<Byte, Integer> readConfigurationBloomFiltersSize (Configuration configuration) {
 		// Structure that maps each rating value to the size of the corresponding bloom filter
@@ -135,7 +135,7 @@ public class BloomFilterUtils {
 
 
 	/**
-	 * Read from size the number of input key for each bloom filter and compute the
+	 * Read from file the number of input key for each bloom filter and compute the
 	 * required size of the data structure.
 	 * @param configuration job configuration
 	 * @param file path to the file generated from the `LineCount` MapReduce application
